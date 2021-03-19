@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+
+Make*
+README_*
+GNU*
