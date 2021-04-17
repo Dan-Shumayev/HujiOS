@@ -3,14 +3,14 @@
 //
 #include "osm.h" /* Our library's references */
 #include <sys/time.h> /* timeval, gettimeofday */
-#include <cstdlib> /* EXIT_FAILURE macro, exit */
 
+#define EXIT_FAILURE -1
 #define SEC_TO_NANOSEC 1000000000
 #define MICROSEC_TO_NANOSEC 1000
 
 double osm_operation_time(unsigned int iterations) {
     if (iterations == 0) {
-        return exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
     struct timeval start_time, end_time;
