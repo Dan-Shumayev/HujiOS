@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _OSM_H
 #define _OSM_H
 
