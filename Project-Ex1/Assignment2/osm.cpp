@@ -25,5 +25,5 @@ double osm_operation_time(unsigned int iterations) {
 
     double delta = (end_time.tv_sec - start_time.tv_sec) * SEC_TO_NANOSEC +
             (end_time.tv_usec - start_time.tv_usec) * MICROSEC_TO_NANOSEC;
-    return delta;
+    return delta / iterations;
 }
