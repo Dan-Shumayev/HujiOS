@@ -5,11 +5,12 @@
 #include <sys/time.h> /* timeval, gettimeofday */
 #include <cmath> /* ceil */
 
-const unsigned int EXIT_RETURN -1
-const unsigned int LOOP_UNROLLING_FACTOR 4 /* We use that method to reduce the
- *                                  overhead of the loop-index increment */
-const unsigned int SEC_TO_NANOSEC 1000000000
-const unsigned int MICROSEC_TO_NANOSEC 1000
+const static double EXIT_RETURN = -1;
+const static unsigned int LOOP_UNROLLING_FACTOR = 4;
+        /* We use that method to reduce the
+         * overhead of the loop-index increment */
+const static unsigned int SEC_TO_NANOSEC = 1000000000;
+const static unsigned int MICROSEC_TO_NANOSEC = 1000;
 
 double osm_operation_time(unsigned int iterations) {
     if (iterations == 0) {
