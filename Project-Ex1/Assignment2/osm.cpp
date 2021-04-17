@@ -21,7 +21,7 @@ double osm_operation_time(unsigned int iterations) {
             ++counter;
         }
     }
-    gettimeofday(&end_time, nullptr)
+    gettimeofday(&end_time, nullptr);
 
     double delta = (end_time.tv_sec - start_time.tv_sec) * SEC_TO_NANOSEC +
             (end_time.tv_usec - start_time.tv_usec) * MICROSEC_TO_NANOSEC;
@@ -44,7 +44,7 @@ double osm_function_time(unsigned int iterations) {
             cdecl_func();
         }
     }
-    gettimeofday(&end_time, nullptr)
+    gettimeofday(&end_time, nullptr);
 
     double delta = (end_time.tv_sec - start_time.tv_sec) * SEC_TO_NANOSEC +
                    (end_time.tv_usec - start_time.tv_usec) * MICROSEC_TO_NANOSEC;
@@ -63,7 +63,7 @@ double osm_syscall_time(unsigned int iterations) {
             OSM_NULLSYSCALL;
         }
     }
-    gettimeofday(&end_time, nullptr)
+    gettimeofday(&end_time, nullptr);
 
     double delta = (end_time.tv_sec - start_time.tv_sec) * SEC_TO_NANOSEC +
                    (end_time.tv_usec - start_time.tv_usec) * MICROSEC_TO_NANOSEC;
