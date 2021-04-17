@@ -5,7 +5,7 @@
 #include <sys/time.h> /* timeval, gettimeofday */
 #include <cmath> /* ceil */
 
-#define EXIT_FAILURE -1
+#define EXIT_RETURN -1
 #define LOOP_UNROLLING_FACTOR 4 /* We use that method to reduce the
  *                                  overhead of the loop-index increment */
 #define LOOP_UNROLLING(operation) operation; operation; operation; operation;
@@ -14,7 +14,7 @@
 
 double osm_operation_time(unsigned int iterations) {
     if (iterations == 0) {
-        return EXIT_FAILURE;
+        return EXIT_RETURN;
     }
 
     unsigned int unrolled_iterations = ceil(((double) iterations / LOOP_UNROLLING_FACTOR));
