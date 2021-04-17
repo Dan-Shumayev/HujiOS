@@ -5,6 +5,9 @@
 #include <sys/time.h> /* timeval, gettimeofday */
 
 #define EXIT_FAILURE -1
+#define LOOP_UNROLLING_FACTOR 4; /* We use that method to reduce the
+ *                                  overhead of the loop-index increment */
+#define LOOP_UNROLLING(operation) operation; operation; operation; operation;
 #define SEC_TO_NANOSEC 1000000000
 #define MICROSEC_TO_NANOSEC 1000
 
