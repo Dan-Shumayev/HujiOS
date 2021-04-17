@@ -17,10 +17,10 @@ double osm_operation_time(unsigned int iterations) {
         return EXIT_RETURN;
     }
 
-    unsigned int unrolled_iterations = ceil(((double) iterations / LOOP_UNROLLING_FACTOR));
     struct timeval start_time, end_time;
     gettimeofday(&start_time, nullptr);
     { // The number of iterations in total is #iterations as required
+        unsigned int unrolled_iterations = ceil(((double) iterations / LOOP_UNROLLING_FACTOR));
         unsigned int counter = 0;
         for (unsigned int i = 0; i < unrolled_iterations; ++i) {
             LOOP_UNROLLING(++counter);
