@@ -3,6 +3,7 @@
 //
 #include "osm.h" /* Our library's references */
 #include <sys/time.h> /* timeval, gettimeofday */
+#include <cmath> /* ceil */
 
 #define EXIT_FAILURE -1
 #define LOOP_UNROLLING_FACTOR 4; /* We use that method to reduce the
@@ -16,12 +17,13 @@ double osm_operation_time(unsigned int iterations) {
         return EXIT_FAILURE;
     }
 
+    unsigned int unrolled_iterations = ceil(((double) iterations / UNROLLING_FACTOR));
     struct timeval start_time, end_time;
     gettimeofday(&start_time, nullptr);
-    {
+    { // The number of iterations in total is #iterations as required
         unsigned int counter = 0;
-        for (unsigned int i = 0; i < iterations; ++i) {
-            ++counter;
+        for (unsigned int i = 0; i < unrolled_iterations; ++i) {
+            LOOP_UNROLLING(++counter);
         }
     }
     gettimeofday(&end_time, nullptr);
