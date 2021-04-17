@@ -19,12 +19,14 @@ double osm_operation_time(unsigned int iterations) {
     struct timeval start_time, end_time;
     gettimeofday(&start_time, nullptr);
     { // The number of iterations in total is #iterations as required
-        unsigned int counter = 0;
+        unsigned int counter1, counter2, counter3, counter4 = 0; /* Avoid unrolling loop
+                                                                  * on the same variable as it produces
+                                                                  * another unwanted overhead - `Pipeline stall` */
         for (unsigned int i = 0; i < unrolled_iterations; ++i) {
-            ++counter;
-            ++counter;
-            ++counter;
-            ++counter;
+            ++counter1;
+            ++counter2;
+            ++counter3;
+            ++counter4;
         }
     }
     gettimeofday(&end_time, nullptr);
