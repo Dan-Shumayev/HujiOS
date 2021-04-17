@@ -42,7 +42,7 @@ void cdecl_func() {}
 
 double osm_function_time(unsigned int iterations) {
     if (iterations == 0) {
-        return EXIT_FAILURE;
+        return EXIT_RETURN;
     }
 
     struct timeval start_time, end_time;
@@ -61,7 +61,7 @@ double osm_function_time(unsigned int iterations) {
 
 double osm_syscall_time(unsigned int iterations) {
     if (iterations == 0) {
-        return EXIT_FAILURE;
+        return EXIT_RETURN;
     }
 
     struct timeval start_time, end_time;
