@@ -5,22 +5,22 @@
 #include <sys/time.h> /* timeval, gettimeofday */
 #include <cmath> /* ceil */
 
-#define EXIT_RETURN -1
-#define LOOP_UNROLLING_FACTOR 4 /* We use that method to reduce the
+const unsigned int EXIT_RETURN -1
+const unsigned int LOOP_UNROLLING_FACTOR 4 /* We use that method to reduce the
  *                                  overhead of the loop-index increment */
 #define LOOP_UNROLLING(operation) operation; operation; operation; operation;
-#define SEC_TO_NANOSEC 1000000000
-#define MICROSEC_TO_NANOSEC 1000
+const unsigned int SEC_TO_NANOSEC 1000000000
+const unsigned int MICROSEC_TO_NANOSEC 1000
 
 double osm_operation_time(unsigned int iterations) {
     if (iterations == 0) {
         return EXIT_RETURN;
     }
 
+    unsigned int unrolled_iterations = (iterations + (iterations % LOOP_UNROLLING_FACTOR)) / LOOP_UNROLLING_FACTOR;
     struct timeval start_time, end_time;
     gettimeofday(&start_time, nullptr);
     { // The number of iterations in total is #iterations as required
-        unsigned int unrolled_iterations = ceil(((double) iterations / LOOP_UNROLLING_FACTOR));
         unsigned int counter = 0;
         for (unsigned int i = 0; i < unrolled_iterations; ++i) {
             LOOP_UNROLLING(++counter);
