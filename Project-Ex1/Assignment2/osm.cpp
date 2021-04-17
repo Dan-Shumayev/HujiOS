@@ -3,10 +3,9 @@
 //
 #include "osm.h" /* Our library's references */
 #include <sys/time.h> /* timeval, gettimeofday */
-#include <cmath> /* ceil */
 
 const static double EXIT_RETURN = -1;
-const static unsigned int LOOP_UNROLLING_FACTOR = 4; /* We use that method to reduce the
+const static unsigned int LOOP_UNROLLING_FACTOR = 4; /* We use that approach to reduce the
                                                       * overhead of the loop-index increment */
 const static unsigned int SEC_TO_NANOSEC = 1000000000;
 const static unsigned int MICROSEC_TO_NANOSEC = 1000;
