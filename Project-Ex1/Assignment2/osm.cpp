@@ -8,7 +8,6 @@
 const unsigned int EXIT_RETURN -1
 const unsigned int LOOP_UNROLLING_FACTOR 4 /* We use that method to reduce the
  *                                  overhead of the loop-index increment */
-#define LOOP_UNROLLING(operation) operation; operation; operation; operation;
 const unsigned int SEC_TO_NANOSEC 1000000000
 const unsigned int MICROSEC_TO_NANOSEC 1000
 
@@ -23,7 +22,10 @@ double osm_operation_time(unsigned int iterations) {
     { // The number of iterations in total is #iterations as required
         unsigned int counter = 0;
         for (unsigned int i = 0; i < unrolled_iterations; ++i) {
-            LOOP_UNROLLING(++counter);
+            ++counter;
+            ++counter;
+            ++counter;
+            ++counter;
         }
     }
     gettimeofday(&end_time, nullptr);
