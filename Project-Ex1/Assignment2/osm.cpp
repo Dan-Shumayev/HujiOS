@@ -6,9 +6,8 @@
 #include <cmath> /* ceil */
 
 const static double EXIT_RETURN = -1;
-const static unsigned int LOOP_UNROLLING_FACTOR = 4;
-        /* We use that method to reduce the
-         * overhead of the loop-index increment */
+const static unsigned int LOOP_UNROLLING_FACTOR = 4; /* We use that method to reduce the
+                                                      * overhead of the loop-index increment */
 const static unsigned int SEC_TO_NANOSEC = 1000000000;
 const static unsigned int MICROSEC_TO_NANOSEC = 1000;
 
