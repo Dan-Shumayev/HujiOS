@@ -42,21 +42,29 @@ double osm_operation_time(unsigned int iterations) {
 
 /* This function is empty and dedicated to measure the
  * CDECL procedure overhead */
-void cdecl_func() {}
+static void __attribute__ ((noinline)) cdecl_func() {}
 
 double osm_function_time(unsigned int iterations) {
     if (iterations == 0) {
         return EXIT_RETURN;
     }
 
+    unsigned int unrolled_iterations = (iterations + (iterations % LOOP_UNROLLING_FACTOR)) / LOOP_UNROLLING_FACTOR;
     struct timeval start_time, end_time;
-    gettimeofday(&start_time, nullptr);
+    if (gettimeofday(&start_time, nullptr)) {
+        return EXIT_RETURN;
+    }
     {
-        for (unsigned int i = 0; i < iterations; ++i) {
+        for (unsigned int i = 0; i < unrolled_iterations; ++i) {
+            cdecl_func();
+            cdecl_func();
+            cdecl_func();
             cdecl_func();
         }
     }
-    gettimeofday(&end_time, nullptr);
+    if (gettimeofday(&end_time, nullptr)) {
+        return EXIT_RETURN;
+    }
 
     double delta = (end_time.tv_sec - start_time.tv_sec) * SEC_TO_NANOSEC +
                    (end_time.tv_usec - start_time.tv_usec) * MICROSEC_TO_NANOSEC;
@@ -68,14 +76,22 @@ double osm_syscall_time(unsigned int iterations) {
         return EXIT_RETURN;
     }
 
+    unsigned int unrolled_iterations = (iterations + (iterations % LOOP_UNROLLING_FACTOR)) / LOOP_UNROLLING_FACTOR;
     struct timeval start_time, end_time;
-    gettimeofday(&start_time, nullptr);
+    if (gettimeofday(&start_time, nullptr)) {
+        return EXIT_RETURN;
+    }
     {
-        for (unsigned int i = 0; i < iterations; ++i) {
+        for (unsigned int i = 0; i < unrolled_iterations; ++i) {
+            OSM_NULLSYSCALL;
+            OSM_NULLSYSCALL;
+            OSM_NULLSYSCALL;
             OSM_NULLSYSCALL;
         }
     }
-    gettimeofday(&end_time, nullptr);
+    if (gettimeofday(&end_time, nullptr)) {
+        return EXIT_RETURN;
+    }
 
     double delta = (end_time.tv_sec - start_time.tv_sec) * SEC_TO_NANOSEC +
                    (end_time.tv_usec - start_time.tv_usec) * MICROSEC_TO_NANOSEC;
