@@ -7,8 +7,8 @@
 const static double EXIT_RETURN = -1;
 const static unsigned int LOOP_UNROLLING_FACTOR = 4; /* We use that approach to reduce the
                                                       * overhead of the loop-index increment */
-const static unsigned int SEC_TO_NANOSEC = 1000000000;
-const static unsigned int MICROSEC_TO_NANOSEC = 1000;
+const static unsigned double SEC_TO_NANOSEC = 1000000000;
+const static unsigned double MICROSEC_TO_NANOSEC = 1000;
 
 double osm_operation_time(unsigned int iterations) {
     if (iterations == 0) {
@@ -17,7 +17,9 @@ double osm_operation_time(unsigned int iterations) {
 
     unsigned int unrolled_iterations = (iterations + (iterations % LOOP_UNROLLING_FACTOR)) / LOOP_UNROLLING_FACTOR;
     struct timeval start_time, end_time;
-    gettimeofday(&start_time, nullptr);
+    if (gettimeofday(&start_time, nullptr)) {
+        return EXIT_RETURN;
+    }
     { // The number of iterations in total is #iterations as required
         unsigned int counter1, counter2, counter3, counter4 = 0; /* Avoid unrolling loop
                                                                   * on the same variable as it produces
@@ -29,7 +31,9 @@ double osm_operation_time(unsigned int iterations) {
             ++counter4;
         }
     }
-    gettimeofday(&end_time, nullptr);
+    if (gettimeofday(&end_time, nullptr)) {
+        return EXIT_RETURN;
+    }
 
     double delta = (end_time.tv_sec - start_time.tv_sec) * SEC_TO_NANOSEC +
             (end_time.tv_usec - start_time.tv_usec) * MICROSEC_TO_NANOSEC;
