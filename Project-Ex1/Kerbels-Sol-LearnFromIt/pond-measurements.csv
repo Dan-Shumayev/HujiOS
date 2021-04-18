@@ -1,0 +1,15 @@
+Machine,Host,MeasurementType,Iterations,TimeNs
+HUJI-pond,pond,Instruction,10,0
+HUJI-pond,pond,FunctionCall,10,0
+HUJI-pond,pond,SysCall,10,500
+HUJI-pond,pond,Instruction,1000,0.25
+HUJI-pond,pond,FunctionCall,1000,1
+HUJI-pond,pond,SysCall,1000,568
+HUJI-pond,pond,Instruction,1000000,0.17075
+HUJI-pond,pond,FunctionCall,1000000,1.871
+HUJI-pond,pond,SysCall,1000000,429.504
+HUJI-pond,pond,Instruction,1000000,0.15325
+HUJI-pond,pond,FunctionCall,1000000,1.768
+HUJI-pond,pond,SysCall,1000000,421.767
+HUJI-pond,pond,Instruction,1000000000,0.129076
+HUJI-pond,pond,FunctionCall,1000000000,1.57437

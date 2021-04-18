@@ -1,0 +1,23 @@
+danielkerbel
+Daniel Kerbel (207053885)
+EX: 1
+
+FILES:
+README      - this file
+MAKEFILE    - makefile
+osm.h       - header of timing library
+osm.cpp     - implementation of timing library
+plot.png    - plot of average running times per instruction
+
+
+ANSWERS:
+
+Assignment 1:
+If the program is supplied with 1 argument, creates the following directories(relative to CWD):
+Welcome, Welcome/To
+and creates the file Welcome/To/OS2020, to which it writes a message of the form:
+{LINUX USER}, if you haven't read the guidelines yet, do it now...\n{ARGUMENT}
+It then closes the file, deletes it and the directories that were created.
+
+In case no argument was provided, it writes an error message to a
+STDERR, and then exits with a success return code.

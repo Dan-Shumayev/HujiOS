@@ -1,0 +1,15 @@
+Machine,Host,MeasurementType,Iterations,TimeNs
+pond-container,pond,Instruction,10,0
+pond-container,pond,FunctionCall,10,0
+pond-container,pond,SysCall,10,1600
+pond-container,pond,Instruction,1000,0.25
+pond-container,pond,FunctionCall,1000,1
+pond-container,pond,SysCall,1000,503
+pond-container,pond,Instruction,1000000,0.15775
+pond-container,pond,FunctionCall,1000000,1.614
+pond-container,pond,SysCall,1000000,423.214
+pond-container,pond,Instruction,1000000,0.14625
+pond-container,pond,FunctionCall,1000000,1.543
+pond-container,pond,SysCall,1000000,429.555
+pond-container,pond,Instruction,1000000000,0.127722
+pond-container,pond,FunctionCall,1000000000,1.6053
