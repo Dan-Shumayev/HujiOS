@@ -7,8 +7,8 @@
 const static double EXIT_RETURN = -1;
 const static unsigned int LOOP_UNROLLING_FACTOR = 4; /* We use that approach to reduce the
                                                       * overhead of the loop-index increment */
-const static unsigned double SEC_TO_NANOSEC = 1000000000;
-const static unsigned double MICROSEC_TO_NANOSEC = 1000;
+const static double SEC_TO_NANOSEC = 1000000000.0;
+const static double MICROSEC_TO_NANOSEC = 1000.0;
 
 double osm_operation_time(unsigned int iterations) {
     if (iterations == 0) {
