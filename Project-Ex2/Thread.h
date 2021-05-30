@@ -72,7 +72,6 @@ class Thread
     unsigned int _total_quantum; // Amount of quantum slots this thread executed so far
     char *_stack; // Thread's stack represented by an array of STACK_SIZE bytes
     sigjmp_buf _env; // Thread's execution context TODO - should be public?
-    bool _blocked; // Indicating if the thread is blocked
     // TODO - we want to differentiate between blocked_by_thread / blocked_by_mutex?
 
     public:

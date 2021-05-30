@@ -3,7 +3,8 @@
 //
 #include "Thread.h"
 
-
+// TODO - how to determine the initial state of a thread - RUNNING/READY?
+// TODO - _total_quantum of a thread should be initialized with 0 or 1?
 /**
  * @param id Thread's ID
  */
