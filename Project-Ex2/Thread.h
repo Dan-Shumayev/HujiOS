@@ -53,6 +53,7 @@ address_t translate_address(address_t addr)
 /** The size of memory each threads occupies on the stack */
 const int STACK_SIZE = 4096;
 
+// TODO - should it be a class member?
 /** Enumerate a thread's execution state */
 enum threadStatus
 {
