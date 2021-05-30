@@ -51,10 +51,11 @@ address_t translate_address(address_t addr)
 #endif
 
 /** The size of memory each threads occupies on the stack */
+// this is already defined in the API header, include that instead of defining it again
 const int STACK_SIZE = 4096;
 
 /** Enumerate a thread's execution state */
-enum threadStatus
+enum threadStatus // use enum class and put it inside Thread's scope: Thread::Status
 {
     RUNNING,
     READY,
@@ -66,6 +67,7 @@ enum threadStatus
  */
 class Thread
 {
+    // underscore is preferred at the end, not the beginning
     unsigned int _tid; // Thread id in the range 0-99
     threadStatus _state; // Track thread's execution state
     unsigned int _total_quantum; // Amount of quantum slots this thread executed so far
@@ -78,16 +80,17 @@ class Thread
          * Thread's default ctr
          * @param tid - Thread's id - should be in range 0-99
          */
-        Thread(int tid); // TODO - are we allowed to ctr a thread without an entry point?
+        Thread(unsigned int tid); // TODO - are we allowed to ctr a thread without an entry point?
 
         /**
         * Second Thread's ctr
         * @param tid - Thread's id - should be in range 0-99
         * @param f - Thread's entry point
         */
-        Thread(int tid, void (*f)(void));
+        Thread(unsigned int tid, void (*f)(void));
 
        // TODO - do we even have to support the 3 following methods?
+       // yes, the destructor to deallocate the stack
        // --------------------------------------------------------- //
         /**
          * The Thread's destructor
@@ -98,6 +101,7 @@ class Thread
          * The Thread's cpy ctr
          * @param thread - a Thread object to copy
          */
+        // no need to document a deleted function
         Thread(const Thread&  thread) = delete;
 
         /**
@@ -128,6 +132,7 @@ class Thread
          * Increment thread's running time quantum by the given argument
          * @param quantum_usec The addition to total quantum running time
          */
+        // running time is not stored and not needed either
         void set_quantum_running(unsigned int quantum_usec);
 
         /**
@@ -143,7 +148,7 @@ class Thread
         /**
          * This method is blocking a thread
          */
-        void block_thread();
+        void block_thread(); // this is redundant bc of set_state
 };
 
 #endif //PROJECT_EX2_THREAD_H

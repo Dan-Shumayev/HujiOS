@@ -4,7 +4,9 @@
 #include "Thread.h"
 
 // TODO - how to determine the initial state of a thread - RUNNING/READY?
+// should be READY, see the state diagram
 // TODO - _total_quantum of a thread should be initialized with 0 or 1?
+// 0, it is inreased when it changes to RUNNING
 
 Thread::Thread(unsigned int id) : _tid(id), _state(RUNNING), _stack(nullptr)
 {
@@ -12,8 +14,11 @@ Thread::Thread(unsigned int id) : _tid(id), _state(RUNNING), _stack(nullptr)
     sigemptyset(&_env->__saved_mask);
 }
 
-Thread::Thread(unsigned int id, void (*f)(void)) : _tid(id), _state(READY),
-                                                            _stack(new char[STACK_SIZE])
+Thread::Thread(unsigned int id, void (*f)(void))
+    : _tid(id)
+    , _state(READY)
+    , _total_quantum(0)
+    , _stack(new char[STACK_SIZE])
 {
     /** Initialize the thread's execution context
      * stack base address (sp) and an entry point (f).
@@ -53,7 +58,7 @@ void Thread::set_state(threadStatus state)
 
 void Thread::set_quantum_running()
 {
-    ++_total_quantum;
+    ++_total_quantum; // this should happen in set_state, if state transitions to RUNNING
 }
 
 unsigned int Thread::get_quantum_running() const
