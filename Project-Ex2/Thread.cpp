@@ -5,19 +5,13 @@
 
 // TODO - how to determine the initial state of a thread - RUNNING/READY?
 // TODO - _total_quantum of a thread should be initialized with 0 or 1?
-/**
- * @param id Thread's ID
- */
+
 Thread::Thread(unsigned int id) : _tid(id), _state(RUNNING), _stack(nullptr)
 {
     sigsetjmp(_env, 1);
     sigemptyset(&_env->__saved_mask);
 }
 
-/**
- * @param id Thread's ID
- * @param f Thread's entry point
- */
 Thread::Thread(unsigned int id, void (*f)(void)) : _tid(id), _state(READY),
                                                             _stack(new char[STACK_SIZE])
 {
@@ -37,53 +31,31 @@ Thread::Thread(unsigned int id, void (*f)(void)) : _tid(id), _state(READY),
     sigemptyset(&_env->__saved_mask);
 }
 
-/**
- *
- */
 Thread::~Thread()
 {
     delete[] _stack;
 }
 
-/**
- *
- * @return
- */
 unsigned int Thread::get_id() const
 {
     return _tid;
 }
 
-/**
- *
- * @return
- */
 threadStatus Thread::get_state() const
 {
     return _state;
 }
 
-/**
- *
- * @param state
- */
 void Thread::set_state(threadStatus state)
 {
     _state = state;
 }
 
-/**
- *
- */
 void Thread::set_quantum_running()
 {
     ++_total_quantum;
 }
 
-/**
- *
- * @return
- */
 unsigned int Thread::get_quantum_running() const
 {
     return _total_quantum;
