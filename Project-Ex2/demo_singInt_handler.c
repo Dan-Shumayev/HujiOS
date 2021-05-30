@@ -14,8 +14,6 @@ void catch_int(int sigNum) {
 	printf(" Don't do that!\n");
 	fflush(stdout);
  }
-
-
 int main(void)
 {
 	// Install catch_int as the signal handler for SIGINT.
