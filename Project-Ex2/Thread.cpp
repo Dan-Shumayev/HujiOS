@@ -7,7 +7,7 @@
 /**
  * @param id Thread's ID
  */
-Thread::Thread(unsigned int id) : _tid(id), _status(RUNNING), _stack(nullptr)
+Thread::Thread(unsigned int id) : _tid(id), _state(RUNNING), _stack(nullptr)
 {
     sigsetjmp(_env, 1);
     sigemptyset(&_env->__saved_mask);
@@ -17,7 +17,7 @@ Thread::Thread(unsigned int id) : _tid(id), _status(RUNNING), _stack(nullptr)
  * @param id Thread's ID
  * @param f Thread's entry point
  */
-Thread::Thread(unsigned int id, void (*f)(void)) : _tid(id), _status(READY),
+Thread::Thread(unsigned int id, void (*f)(void)) : _tid(id), _state(READY),
                                                             _stack(new char[STACK_SIZE])
 {
     /** Initialize the thread's execution context
@@ -57,18 +57,18 @@ unsigned int Thread::get_id() const
  *
  * @return
  */
-threadStatus Thread::get_status() const
+threadStatus Thread::get_state() const
 {
-    return _status;
+    return _state;
 }
 
 /**
  *
- * @param status
+ * @param state
  */
-void Thread::set_status(threadStatus status)
+void Thread::set_state(threadStatus state)
 {
-    _status = status;
+    _state = state;
 }
 
 /**

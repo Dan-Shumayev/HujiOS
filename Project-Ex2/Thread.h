@@ -53,7 +53,7 @@ address_t translate_address(address_t addr)
 /** The size of memory each threads occupies on the stack */
 const int STACK_SIZE = 4096;
 
-/** Enumerate a thread's execution status */
+/** Enumerate a thread's execution state */
 enum threadStatus
 {
     RUNNING,
@@ -67,7 +67,7 @@ enum threadStatus
 class Thread
 {
     unsigned int _tid; // Thread id in the range 0-99
-    threadStatus _status; // Track thread's execution status
+    threadStatus _state; // Track thread's execution state
     unsigned int _total_quantum; // Amount of quantum slots this thread executed so far
     char *_stack; // Thread's stack represented by an array of STACK_SIZE bytes
     sigjmp_buf _env; // Thread's execution context TODO - should be public?
@@ -115,15 +115,15 @@ class Thread
         unsigned int get_id() const;
 
         /**
-         * @return Current thread's execution status
+         * @return Current thread's execution state
          */
-        threadStatus get_status() const;
+        threadStatus get_state() const;
 
         /**
-         * Setting thread's execution status
-         * @param status The status to set - RUNNING/READY/BLOCKED
+         * Setting thread's execution state
+         * @param state The state to set - RUNNING/READY/BLOCKED
          */
-        void set_status(threadStatus status);
+        void set_state(threadStatus state);
 
         /**
          * Increment thread's running time quantum by the given argument
