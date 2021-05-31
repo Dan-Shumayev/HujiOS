@@ -11,7 +11,7 @@
 #include <map> // std::map
 #include <sys/time.h> // itimerval
 
-typedef std::shared_ptr<Thread *> = threadSharedPtr;
+typedef std::shared_ptr<Thread> = threadSharedPtr;
 
 /**
  * Round-Robin scheduler for user-level threads.
@@ -21,7 +21,7 @@ class Scheduler {
         /** Thread structures: */
     threadSharedPtr running_thread_; /** Shared_ptr bc it'd be also stored inside
                                                                         data structures */
-    std::list<threadSharedPtr> thread_ready_list;
+    std::list<threadSharedPtr> thread_ready_list_;
     std::map<size_t, threadSharedPtr> tid_to_thread_map_;
     // TODO - blocked threads (by another thread/mutex) structures?
         /** Accounting information: */
