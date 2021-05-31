@@ -7,10 +7,12 @@
 
 Scheduler::Scheduler(int quantum_usecs)
 : thread_quantum_(quantum_usecs), // TODO - int to size_t - not dangerous?
+    // yes it is, it's strange that they used int and specified that a non-positive value should result in an error
     min_available_tid_(1)
     // TODO - What else should be initialized?
 {}
 
+// I don't understand what this does
 void Scheduler::mask_signal(const int signo)
 {
     if (sigaddset(&blocked_signals_, signo)) /** TODO - is it okay to pass signo to it?
