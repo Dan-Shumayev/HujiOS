@@ -7,6 +7,7 @@
 #include <memory> // smart_pointers
 #include "uthreads.h" // STACK_SIZE macro
 #include <cstddef> // size_t
+#include <setjmp.h> // sigjmp_buf
 
 #ifdef __x86_64__ // Pre-defined compiler macro ($ echo | gcc -E -dM -)
 /* code for 64 bit Intel arch */
@@ -99,6 +100,11 @@ class Thread
          * @return Amount of quantum slots the thread has executed so far
          */
         const size_t& get_quantum_running() const {return numOfQuantum_;}
+
+        /**
+         * @return Returns the thread's environment struct
+         */
+        const sigjmp_buf& get_env() const {return env_;}
 };
 
 #endif //PROJECT_EX2_THREAD_H
