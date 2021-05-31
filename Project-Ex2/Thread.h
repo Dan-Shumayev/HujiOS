@@ -4,16 +4,14 @@
 #ifndef PROJECT_EX2_THREAD_H
 #define PROJECT_EX2_THREAD_H
 
-#include <stdio.h>
-#include <setjmp.h>
-#include <signal.h>
-#include <unistd.h>
-#include <sys/time.h>
+#include <memory> // smart_pointers
+#include "uthreads.h" // STACK_SIZE macro
+#include <cstddef> // size_t
 
-#ifdef __x86_64__
+#ifdef __x86_64__ // Pre-defined compiler macro ($ echo | gcc -E -dM -)
 /* code for 64 bit Intel arch */
 
-typedef unsigned long address_t;
+typedef unsigned long address_t; // 64-bit
 #define JB_SP 6
 #define JB_PC 7
 
@@ -32,7 +30,7 @@ address_t translate_address(address_t addr)
 #else
 /* code for 32 bit Intel arch */
 
-typedef unsigned int address_t;
+typedef size_t address_t; // 32-bit
 #define JB_SP 4
 #define JB_PC 5
 
@@ -43,107 +41,64 @@ address_t translate_address(address_t addr)
     address_t ret;
     asm volatile("xor    %%gs:0x18,%0\n"
                  "rol    $0x9,%0\n"
-    : "=g" (ret)
-    : "0" (addr));
+                : "=g" (ret)
+                : "0" (addr));
     return ret;
 }
 
 #endif
-
-/** The size of memory each threads occupies on the stack */
-const int STACK_SIZE = 4096;
-
-/** Enumerate a thread's execution state */
-enum threadStatus
-{
-    RUNNING,
-    READY,
-    BLOCKED
-};
 
 /**
  * Thread object representation
  */
 class Thread
 {
-    unsigned int _tid; // Thread id in the range 0-99
-    threadStatus _state; // Track thread's execution state
-    unsigned int _total_quantum; // Amount of quantum slots this thread executed so far
-    char *_stack; // Thread's stack represented by an array of STACK_SIZE bytes
-    sigjmp_buf _env; // Thread's execution context TODO - should be public?
-    // TODO - we want to differentiate between blocked_by_thread / blocked_by_mutex?
+    size_t tid_; // Thread id in the range 0-99
+    Status state_; // Track thread's execution state
+    sigjmp_buf env_; // Thread's execution context
+    std::unique_ptr<char[]> stack_; // Thread's stack represented by an array of STACK_SIZE bytes
+    size_t numOfQuantum_; // Number of quantum the thread has occupied the CPU
 
     public:
-        /**
-         * Thread's default ctr
-         * @param tid - Thread's id - should be in range 0-99
-         */
-        Thread(int tid); // TODO - are we allowed to ctr a thread without an entry point?
+        /** Enumerate a thread's execution state */
+        enum class Status { RUNNING, READY, BLOCKED };
+        // TODO - Do we want to differentiate between blocked_by_thread/blocked_by_mutex?
 
         /**
         * Second Thread's ctr
         * @param tid - Thread's id - should be in range 0-99
         * @param f - Thread's entry point
         */
-        Thread(int tid, void (*f)(void));
+        Thread(const size_t& tid, void (*f)(void));
 
-       // TODO - do we even have to support the 3 following methods?
-       // --------------------------------------------------------- //
-        /**
-         * The Thread's destructor
-         */
-        ~Thread();
+        // TODO - What's the effect and purpose of these delete ctr's?
+        Thread(const Thread& thread) = delete;
 
-        /**
-         * The Thread's cpy ctr
-         * @param thread - a Thread object to copy
-         */
-        Thread(const Thread&  thread) = delete;
-
-        /**
-         * operator =
-         * @param thread a reference to a Thread object to equal to
-         * @return a Thread object
-         */
         Thread operator=(const Thread& thread) = delete;
-        // --------------------------------------------------------- //
 
+        // TODO - These const versions can be applied only on const instances of a Thread
+        //  object? Should I declare another version for each getter which doesn't contain
+        //  any const keyword?
         /**
          * @return Thread's ID
          */
-        unsigned int get_id() const;
+        const size_t& get_id() const {return tid_;}
 
         /**
          * @return Current thread's execution state
          */
-        threadStatus get_state() const;
+        const Status& get_state() const {return state_;}
 
         /**
          * Setting thread's execution state
          * @param state The state to set - RUNNING/READY/BLOCKED
          */
-        void set_state(threadStatus state);
-
-        /**
-         * Increment thread's running time quantum by the given argument
-         * @param quantum_usec The addition to total quantum running time
-         */
-        void set_quantum_running(unsigned int quantum_usec);
+        void set_state(const Status& state);
 
         /**
          * @return Amount of quantum slots the thread has executed so far
          */
-        unsigned int get_quantum_running() const;
-
-        /**
-         * @return True iff the thread is blocked
-         */
-        bool is_blocked() const;
-
-        /**
-         * This method is blocking a thread
-         */
-        void block_thread();
+        const size_t& get_quantum_running() const {return numOfQuantum_;}
 };
 
 #endif //PROJECT_EX2_THREAD_H
