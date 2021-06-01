@@ -1,10 +1,8 @@
 //
 // Created by dan-os on 30/05/2021.
 //
-#include "Thread.h"
+#include "thread.h"
 
-// TODO - Treat edge cases where ID not in the right range (0 is in range? That is, the main
-//  thread is actually initialized somehow? Guess no)
 Thread::Thread(size_t id, void (*f)(void))
     : tid_(id),
     state_(Status::READY),

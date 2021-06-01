@@ -54,57 +54,57 @@ address_t translate_address(address_t addr)
  */
 class Thread
 {
+public:
+    /** Enumerate a thread's execution state */
+    enum class Status { RUNNING, READY, BLOCKED };
+private:
     size_t tid_; // Thread id in the range 0-99
     Status state_; // Track thread's execution state
     sigjmp_buf env_; // Thread's execution context
     std::unique_ptr<char[]> stack_; // Thread's stack represented by an array of STACK_SIZE bytes
     size_t numOfQuantum_; // Number of quantum the thread has occupied the CPU
+public:
+    /**
+    * Second Thread's ctr
+    * @param tid - Thread's id - should be in range 0-99
+    * @param f - Thread's entry point
+    */
+    Thread(const size_t& tid, void (*f)(void));
 
-    public:
-        /** Enumerate a thread's execution state */
-        enum class Status { RUNNING, READY, BLOCKED };
-        // TODO - Do we want to differentiate between blocked_by_thread/blocked_by_mutex?
+    // prohibit copying Thread objects
+    Thread(const Thread&) = delete;
+    Thread operator=(const Thread&) = delete;
 
-        /**
-        * Second Thread's ctr
-        * @param tid - Thread's id - should be in range 0-99
-        * @param f - Thread's entry point
-        */
-        Thread(const size_t& tid, void (*f)(void));
+    /**
+     * @return Thread's ID
+     */
+    size_t get_id() const {return tid_;}
 
-        // TODO - What's the effect and purpose of these delete ctr's?
-        Thread(const Thread& thread) = delete;
+    /**
+     * @return Current thread's execution state
+     */
+    Status get_state() const {return state_;}
 
-        Thread operator=(const Thread& thread) = delete;
+    /**
+     * Setting thread's execution state
+     * @param state The state to set - RUNNING/READY/BLOCKED
+     */
+    void set_state(Status state);
 
-        // TODO - These const versions can be applied only on const instances of a Thread
-        //  object? Should I declare another version for each getter which doesn't contain
-        //  any const keyword?
-        /**
-         * @return Thread's ID
-         */
-        const size_t& get_id() const {return tid_;}
+    /**
+     * @return Amount of quantum slots the thread has executed so far
+     */
+    int get_quantum_running() const {return numOfQuantum_;}
 
-        /**
-         * @return Current thread's execution state
-         */
-        const Status& get_state() const {return state_;}
+    /**
+     * @return Amount of quantum slots the thread has executed so far
+     */
+    void incrementNumOfQuantum() {++numOfQuantum_;}
 
-        /**
-         * Setting thread's execution state
-         * @param state The state to set - RUNNING/READY/BLOCKED
-         */
-        void set_state(const Status& state);
-
-        /**
-         * @return Amount of quantum slots the thread has executed so far
-         */
-        const size_t& get_quantum_running() const {return numOfQuantum_;}
-
-        /**
-         * @return Returns the thread's environment struct
-         */
-        const sigjmp_buf& get_env() const {return env_;}
+    /**
+     * @return Returns the thread's environment struct
+     */
+    const sigjmp_buf& get_env() const {return env_;}
 };
 
 #endif //PROJECT_EX2_THREAD_H
