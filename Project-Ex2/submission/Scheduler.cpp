@@ -89,7 +89,7 @@ void Scheduler::_preempt(PreemptReason preemptReason)
         // to another one, so main thread's env is zero (either way, it's an optimization)
         return; // Let the main thread resume its execution
     }
-    if (preemptionReason == PreemptReason::Termination)
+    if (preemptReason == PreemptReason::Termination)
     {
         tidToTerminate_ = preemptedThreadId;
         // the thread being terminated will be deleted from memory only once

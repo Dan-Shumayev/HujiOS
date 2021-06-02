@@ -94,7 +94,7 @@ public:
     /**
      * @return Returns the thread's environment struct
      */
-    const sigjmp_buf& get_env() const {return env_;}
+    sigjmp_buf get_env() const {return env_;}
 };
 
 #endif //PROJECT_EX2_THREAD_H

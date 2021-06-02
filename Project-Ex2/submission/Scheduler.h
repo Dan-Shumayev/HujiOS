@@ -110,7 +110,7 @@ public:
     /**
      * @return ID of the calling (currently running) thread
      */
-    inline int getTid() const {return running_thread_;}
+    inline int getTid() const {return currentRunningThread_;}
 
     /**
     * @return Total number of quantums that occupied the CPU so far
