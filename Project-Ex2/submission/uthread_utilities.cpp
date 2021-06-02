@@ -2,6 +2,7 @@
 // Created by dan-os on 01/06/2021.
 //
 
+#include "uthread_exception.h"
 #include "uthread_utilities.h"
 
 SigMask::SigMask(int signo)

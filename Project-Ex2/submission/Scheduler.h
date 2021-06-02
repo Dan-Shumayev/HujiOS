@@ -13,7 +13,6 @@
 #include <unordered_set> // std::unordered_set
 
 using threadSharedPtr = std::shared_ptr<Thread>;
-typedef void threadEntryPoint(void);
 
 /**
  * Round-Robin scheduler for user-level threads.
@@ -84,7 +83,7 @@ private:
     void _setTimerSignal(int quantum_usecs);
 
     /** Looking for possible thread to be terminated from previous execution context, if exists - deleting it */
-    void _eraseTerminatedThread();
+    void _deleteTerminatedThread();
 public:
     // there will be one instance created and the library calls will be forwarded to it
     Scheduler(int quantum_usecs);
@@ -110,7 +109,7 @@ public:
     /**
      * @return ID of the calling (currently running) thread
      */
-    inline int getTid() const {return running_thread_;}
+    inline int getTid() const {return currentRunningThread_;}
 
     /**
     * @return Total number of quantums that occupied the CPU so far
@@ -148,12 +147,12 @@ public:
     /**
      * Tries locking the mutex in order to perform a critical section.
      */
-    void mutexTryLock();
+    int mutexTryLock();
 
     /**
      * Tries unlocking the mutex.
      */
-    void mutexTryUnlock();
+    int mutexTryUnlock();
 
     /**
      * Wrapper for _timeHandler function, as we can't pass function members as parameters

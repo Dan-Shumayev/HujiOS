@@ -5,7 +5,7 @@
 #ifndef PROJECT_EX2_UTHREAD_EXCEPTION_H
 #define PROJECT_EX2_UTHREAD_EXCEPTION_H
 
-#include "uthread_utilities.h" // EXIT_FAILURE
+#include "uthread_utilities.h" // EXIT_FAIL
 #include <cstdlib> // std::exit
 #include <iostream> // std::cerr
 #include <cstring> // std::strerror

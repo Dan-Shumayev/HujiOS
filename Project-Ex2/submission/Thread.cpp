@@ -2,6 +2,7 @@
 // Created by dan-os on 30/05/2021.
 //
 #include "thread.h"
+#include <signal.h>
 
 Thread::Thread()
 : tid_(0), numOfQuantum_(0), stack_(nullptr), env_{} {}

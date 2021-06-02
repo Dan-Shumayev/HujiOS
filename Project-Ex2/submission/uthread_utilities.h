@@ -5,10 +5,11 @@
 #ifndef PROJECT_EX2_UTHREAD_UTILITIES_H
 #define PROJECT_EX2_UTHREAD_UTILITIES_H
 
+#include <signal.h>
+
 using threadEntryPoint = void(*)(void);
 
-const int EXIT_FAILURE = -1;
-const int EXIT_SUCCESS = 0;
+const int EXIT_FAIL = -1;
 
 /**
  *  When an object of this class in scope, it ensures that given signal is masked

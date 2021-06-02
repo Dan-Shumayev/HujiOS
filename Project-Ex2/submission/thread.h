@@ -57,7 +57,7 @@ class Thread
 private:
     int tid_; // Thread id in the range 0-99
     sigjmp_buf env_; // Thread's execution context
-    std::unique_ptr<char[]> stack_; // Thread's stack represented by an array of STACK_SIZE bytes
+    char* stack_; // Thread's stack represented by an array of STACK_SIZE bytes
     int numOfQuantum_; // Number of quantum the thread has occupied the CPU
 public:
     /**
@@ -94,7 +94,7 @@ public:
     /**
      * @return Returns the thread's environment struct
      */
-    const sigjmp_buf& get_env() const {return env_;}
+    sigjmp_buf& get_env() {return env_;}
 };
 
 #endif //PROJECT_EX2_THREAD_H

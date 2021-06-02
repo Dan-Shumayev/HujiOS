@@ -57,7 +57,7 @@ int Scheduler::_getLowestAvailableId() const
         }
     }
 
-    return EXIT_FAILURE;
+    return EXIT_FAIL;
 }
 
 bool Scheduler::_isThreadExist(int tid)
@@ -89,7 +89,7 @@ void Scheduler::_preempt(PreemptReason preemptReason)
         // to another one, so main thread's env is zero (either way, it's an optimization)
         return; // Let the main thread resume its execution
     }
-    if (preemptionReason == PreemptReason::Termination)
+    if (preemptReason == PreemptReason::Termination)
     {
         tidToTerminate_ = preemptedThreadId;
         // the thread being terminated will be deleted from memory only once
@@ -124,7 +124,7 @@ void Scheduler::_deleteReadyThread(int tid)
 void Scheduler::_deleteTerminatedThread() {
     if (tidToTerminate_ != -1) // is there a thread to terminate?
     {
-        threads_.erase(_tidBeingTerminated);
+        threads_.erase(tidToTerminate_);
         tidToTerminate_ = -1; // nothing to erase for now
     }
 }
@@ -136,7 +136,7 @@ void Scheduler::timerHandler(int signo)
     _deleteTerminatedThread();
     if (signo != SIGVTALRM)
     {
-        return uthreadException("Not the virtual timer signal. SIGVTALRM is required.");
+        throw uthreadException("Not the virtual timer signal. SIGVTALRM is required.");
     }
     readyQueue_.emplace_back(currentRunningThread_);
     _preempt(PreemptReason::QuantumExpiration);
@@ -147,17 +147,17 @@ int Scheduler::spawnThread(threadEntryPoint function)
     _deleteTerminatedThread();
     if (function == nullptr)
     {
-        return uthreadException("Can't spawn thread with nullptr function");
+        throw uthreadException("Can't spawn thread with nullptr function");
     }
     if (threads_.size() == MAX_THREAD_NUM)
     {
-        return uthreadException("Maximum thread count was reached");
+        throw uthreadException("Maximum thread count was reached");
     }
 
     int nextTid = _getLowestAvailableId();
-    if (nextTid == EXIT_FAILURE)
+    if (nextTid == EXIT_FAIL)
     {
-        return EXIT_FAILURE;
+        return EXIT_FAIL;
     }
     /** Insert the newly spawned thread into the entire collection of concurrent threads,
         Assuming no element with this ID in threads_. using some trickery because it's not copyable*/
@@ -169,7 +169,7 @@ int Scheduler::spawnThread(threadEntryPoint function)
     return nextTid;
 }
 
-int terminateThread(int tid)
+int Scheduler::terminateThread(int tid)
 {
     _deleteTerminatedThread();
     if (tid == 0) // Main thread
@@ -201,7 +201,6 @@ int terminateThread(int tid)
 int Scheduler::getThreadQuantums(int tid)
 {
     _deleteTerminatedThread();
-    Thread* thread;
     if (!_isThreadExist(tid) || tidToTerminate_ == tid)
     {
         return uthreadException("Can't get quantums of non existent thread");
@@ -252,7 +251,7 @@ int Scheduler::resumeThread(int tid)
         return EXIT_SUCCESS;
     }
     auto threadIt = blockedByMutexThreads_.find(tid);
-    if (threadIt == blockedByMutexThreads_end())
+    if (threadIt == blockedByMutexThreads_.end())
     {
         // it's not mutex-blocked, then delete it from blocked threads and queue it to the ready threads
         blockedThreads_.erase(threadIt);
@@ -262,18 +261,18 @@ int Scheduler::resumeThread(int tid)
     return EXIT_SUCCESS;
 }
 
-void Scheduler::mutexTryLock()
+int Scheduler::mutexTryLock()
 {
     _deleteTerminatedThread();
     if (mutexLockedByThreadId_ == -1) // available mutex
     {
         mutexLockedByThreadId_ = currentRunningThread_;
-        return EXIT_SUCCESS
+        return EXIT_SUCCESS;
     }
     // locked
     if (mutexLockedByThreadId_ == currentRunningThread_) // the thread locking the mutex wants to re-lock?
     {
-        return uthreadException("the thread locking the mutex wants to re-lock it");
+        throw uthreadException("the thread locking the mutex wants to re-lock it");
     }
 
     // here the thread has to be blocked because of the mutex locked
@@ -283,12 +282,12 @@ void Scheduler::mutexTryLock()
     return EXIT_SUCCESS;
 }
 
-void Scheduler::mutexTryUnlock()
+int Scheduler::mutexTryUnlock()
 {
     _deleteTerminatedThread();
     if (mutexLockedByThreadId_ == -1) // already unlocked
     {
-        return uthreadException("can't unlock unlocked mutex");
+        throw uthreadException("can't unlock unlocked mutex");
     }
 
     mutexLockedByThreadId_ = -1; // mutex unlocked
