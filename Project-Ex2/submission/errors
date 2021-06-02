@@ -1,0 +1,317 @@
+In file included from /usr/include/c++/9/cstdlib:75,
+                 from /usr/include/c++/9/ext/string_conversions.h:41,
+                 from /usr/include/c++/9/bits/basic_string.h:6493,
+                 from /usr/include/c++/9/string:55,
+                 from /usr/include/c++/9/stdexcept:39,
+                 from /usr/include/c++/9/array:39,
+                 from /usr/include/c++/9/tuple:39,
+                 from /usr/include/c++/9/bits/unique_ptr.h:37,
+                 from /usr/include/c++/9/memory:80,
+                 from thread.h:7,
+                 from Scheduler.h:8,
+                 from Scheduler.cpp:5:
+uthread_utilities.h:10:11: error: expected unqualified-id before numeric constant
+   10 | const int EXIT_FAILURE = -1;
+      |           ^~~~~~~~~~~~
+In file included from Scheduler.cpp:5:
+Scheduler.h:16:14: error: conflicting declaration ‘typedef void threadEntryPoint()’
+   16 | typedef void threadEntryPoint(void);
+      |              ^~~~~~~~~~~~~~~~
+In file included from uthread_exception.h:8,
+                 from thread.h:10,
+                 from Scheduler.h:8,
+                 from Scheduler.cpp:5:
+uthread_utilities.h:8:7: note: previous declaration as ‘using threadEntryPoint = void (*)()’
+    8 | using threadEntryPoint = void(*)(void);
+      |       ^~~~~~~~~~~~~~~~
+In file included from Scheduler.cpp:5:
+Scheduler.h: In member function ‘int Scheduler::getTid() const’:
+Scheduler.h:113:39: error: ‘running_thread_’ was not declared in this scope
+  113 |     inline int getTid() const {return running_thread_;}
+      |                                       ^~~~~~~~~~~~~~~
+Scheduler.cpp: In member function ‘void Scheduler::_preempt(Scheduler::PreemptReason)’:
+Scheduler.cpp:92:9: error: ‘preemptionReason’ was not declared in this scope; did you mean ‘preemptReason’?
+   92 |     if (preemptionReason == PreemptReason::Termination)
+      |         ^~~~~~~~~~~~~~~~
+      |         preemptReason
+Scheduler.cpp:97:38: error: invalid conversion from ‘const __jmp_buf_tag*’ to ‘__jmp_buf_tag*’ [-fpermissive]
+   97 |         siglongjmp(nextThread.get_env(), 1);
+      |                    ~~~~~~~~~~~~~~~~~~^~
+      |                                      |
+      |                                      const __jmp_buf_tag*
+In file included from thread.h:9,
+                 from Scheduler.h:8,
+                 from Scheduler.cpp:5:
+/usr/include/setjmp.h:93:36: note:   initializing argument 1 of ‘void siglongjmp(__jmp_buf_tag*, int)’
+   93 | extern void siglongjmp (sigjmp_buf __env, int __val)
+      |                         ~~~~~~~~~~~^~~~~
+Scheduler.cpp:102:45: error: invalid conversion from ‘const __jmp_buf_tag*’ to ‘__jmp_buf_tag*’ [-fpermissive]
+  102 |         if (sigsetjmp(previousThread.get_env(), 1) != 0)
+      |                       ~~~~~~~~~~~~~~~~~~~~~~^~
+      |                                             |
+      |                                             const __jmp_buf_tag*
+In file included from /usr/include/x86_64-linux-gnu/c++/9/bits/gthr-default.h:35,
+                 from /usr/include/x86_64-linux-gnu/c++/9/bits/gthr.h:148,
+                 from /usr/include/c++/9/ext/atomicity.h:35,
+                 from /usr/include/c++/9/memory:73,
+                 from thread.h:7,
+                 from Scheduler.h:8,
+                 from Scheduler.cpp:5:
+/usr/include/pthread.h:719:47: note:   initializing argument 1 of ‘int __sigsetjmp(__jmp_buf_tag*, int)’
+  719 | extern int __sigsetjmp (struct __jmp_buf_tag *__env, int __savemask) __THROWNL;
+      |                         ~~~~~~~~~~~~~~~~~~~~~~^~~~~
+Scheduler.cpp:108:38: error: invalid conversion from ‘const __jmp_buf_tag*’ to ‘__jmp_buf_tag*’ [-fpermissive]
+  108 |         siglongjmp(nextThread.get_env(), 1); // jump to the next thread
+      |                    ~~~~~~~~~~~~~~~~~~^~
+      |                                      |
+      |                                      const __jmp_buf_tag*
+In file included from thread.h:9,
+                 from Scheduler.h:8,
+                 from Scheduler.cpp:5:
+/usr/include/setjmp.h:93:36: note:   initializing argument 1 of ‘void siglongjmp(__jmp_buf_tag*, int)’
+   93 | extern void siglongjmp (sigjmp_buf __env, int __val)
+      |                         ~~~~~~~~~~~^~~~~
+Scheduler.cpp: At global scope:
+Scheduler.cpp:124:6: error: no declaration matches ‘void Scheduler::_deleteTerminatedThread()’
+  124 | void Scheduler::_deleteTerminatedThread() {
+      |      ^~~~~~~~~
+Scheduler.cpp:124:6: note: no functions named ‘void Scheduler::_deleteTerminatedThread()’
+In file included from Scheduler.cpp:5:
+Scheduler.h:21:7: note: ‘class Scheduler’ defined here
+   21 | class Scheduler {
+      |       ^~~~~~~~~
+Scheduler.cpp: In member function ‘void Scheduler::timerHandler(int)’:
+Scheduler.cpp:136:5: error: ‘_deleteTerminatedThread’ was not declared in this scope; did you mean ‘_eraseTerminatedThread’?
+  136 |     _deleteTerminatedThread();
+      |     ^~~~~~~~~~~~~~~~~~~~~~~
+      |     _eraseTerminatedThread
+Scheduler.cpp:139:87: error: return-statement with a value, in function returning ‘void’ [-fpermissive]
+  139 |         return uthreadException("Not the virtual timer signal. SIGVTALRM is required.");
+      |                                                                                       ^
+Scheduler.cpp: In member function ‘int Scheduler::spawnThread(threadEntryPoint)’:
+Scheduler.cpp:147:5: error: ‘_deleteTerminatedThread’ was not declared in this scope; did you mean ‘_eraseTerminatedThread’?
+  147 |     _deleteTerminatedThread();
+      |     ^~~~~~~~~~~~~~~~~~~~~~~
+      |     _eraseTerminatedThread
+Scheduler.cpp: In function ‘int terminateThread(int)’:
+Scheduler.cpp:174:5: error: ‘_deleteTerminatedThread’ was not declared in this scope; did you mean ‘terminateThread’?
+  174 |     _deleteTerminatedThread();
+      |     ^~~~~~~~~~~~~~~~~~~~~~~
+      |     terminateThread
+Scheduler.cpp:182:10: error: ‘_isThreadExist’ was not declared in this scope
+  182 |     if (!_isThreadExist(tid))
+      |          ^~~~~~~~~~~~~~
+Scheduler.cpp:186:21: error: ‘currentRunningThread_’ was not declared in this scope
+  186 |     else if (tid == currentRunningThread_)
+      |                     ^~~~~~~~~~~~~~~~~~~~~
+Scheduler.cpp:188:18: error: ‘PreemptReason’ has not been declared
+  188 |         _preempt(PreemptReason::Termination);
+      |                  ^~~~~~~~~~~~~
+Scheduler.cpp:188:9: error: ‘_preempt’ was not declared in this scope
+  188 |         _preempt(PreemptReason::Termination);
+      |         ^~~~~~~~
+Scheduler.cpp:192:13: error: ‘blockedThreads_’ was not declared in this scope
+  192 |         if (blockedThreads_.erase(tid) == 0 && blockedByMutexThreads_.erase(tid) == 0)
+      |             ^~~~~~~~~~~~~~~
+Scheduler.cpp:192:48: error: ‘blockedByMutexThreads_’ was not declared in this scope
+  192 |         if (blockedThreads_.erase(tid) == 0 && blockedByMutexThreads_.erase(tid) == 0)
+      |                                                ^~~~~~~~~~~~~~~~~~~~~~
+Scheduler.cpp:195:13: error: ‘_deleteReadyThread’ was not declared in this scope
+  195 |             _deleteReadyThread(tid);
+      |             ^~~~~~~~~~~~~~~~~~
+Scheduler.cpp: In member function ‘int Scheduler::getThreadQuantums(int)’:
+Scheduler.cpp:203:5: error: ‘_deleteTerminatedThread’ was not declared in this scope; did you mean ‘_eraseTerminatedThread’?
+  203 |     _deleteTerminatedThread();
+      |     ^~~~~~~~~~~~~~~~~~~~~~~
+      |     _eraseTerminatedThread
+Scheduler.cpp:209:13: error: conflicting declaration ‘Thread& thread’
+  209 |     Thread& thread = threads_[tid];
+      |             ^~~~~~
+Scheduler.cpp:204:13: note: previous declaration as ‘Thread* thread’
+  204 |     Thread* thread;
+      |             ^~~~~~
+Scheduler.cpp:210:19: error: request for member ‘get_quantum_running’ in ‘thread’, which is of pointer type ‘Thread*’ (maybe you meant to use ‘->’ ?)
+  210 |     return thread.get_quantum_running();
+      |                   ^~~~~~~~~~~~~~~~~~~
+Scheduler.cpp: In member function ‘int Scheduler::blockThread(int)’:
+Scheduler.cpp:215:5: error: ‘_deleteTerminatedThread’ was not declared in this scope; did you mean ‘_eraseTerminatedThread’?
+  215 |     _deleteTerminatedThread();
+      |     ^~~~~~~~~~~~~~~~~~~~~~~
+      |     _eraseTerminatedThread
+Scheduler.cpp: In member function ‘int Scheduler::resumeThread(int)’:
+Scheduler.cpp:244:5: error: ‘_deleteTerminatedThread’ was not declared in this scope; did you mean ‘_eraseTerminatedThread’?
+  244 |     _deleteTerminatedThread();
+      |     ^~~~~~~~~~~~~~~~~~~~~~~
+      |     _eraseTerminatedThread
+Scheduler.cpp:255:21: error: ‘blockedByMutexThreads_end’ was not declared in this scope; did you mean ‘blockedByMutexThreads_’?
+  255 |     if (threadIt == blockedByMutexThreads_end())
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~
+      |                     blockedByMutexThreads_
+Scheduler.cpp: In member function ‘void Scheduler::mutexTryLock()’:
+Scheduler.cpp:267:5: error: ‘_deleteTerminatedThread’ was not declared in this scope; did you mean ‘_eraseTerminatedThread’?
+  267 |     _deleteTerminatedThread();
+      |     ^~~~~~~~~~~~~~~~~~~~~~~
+      |     _eraseTerminatedThread
+In file included from /usr/include/c++/9/cstdlib:75,
+                 from /usr/include/c++/9/ext/string_conversions.h:41,
+                 from /usr/include/c++/9/bits/basic_string.h:6493,
+                 from /usr/include/c++/9/string:55,
+                 from /usr/include/c++/9/stdexcept:39,
+                 from /usr/include/c++/9/array:39,
+                 from /usr/include/c++/9/tuple:39,
+                 from /usr/include/c++/9/bits/unique_ptr.h:37,
+                 from /usr/include/c++/9/memory:80,
+                 from thread.h:7,
+                 from Scheduler.h:8,
+                 from Scheduler.cpp:5:
+Scheduler.cpp:271:16: error: return-statement with a value, in function returning ‘void’ [-fpermissive]
+  271 |         return EXIT_SUCCESS
+      |                ^~~~~~~~~~~~
+Scheduler.cpp:272:5: error: expected ‘;’ before ‘}’ token
+  272 |     }
+      |     ^
+Scheduler.cpp:276:83: error: return-statement with a value, in function returning ‘void’ [-fpermissive]
+  276 |         return uthreadException("the thread locking the mutex wants to re-lock it");
+      |                                                                                   ^
+In file included from /usr/include/c++/9/cstdlib:75,
+                 from /usr/include/c++/9/ext/string_conversions.h:41,
+                 from /usr/include/c++/9/bits/basic_string.h:6493,
+                 from /usr/include/c++/9/string:55,
+                 from /usr/include/c++/9/stdexcept:39,
+                 from /usr/include/c++/9/array:39,
+                 from /usr/include/c++/9/tuple:39,
+                 from /usr/include/c++/9/bits/unique_ptr.h:37,
+                 from /usr/include/c++/9/memory:80,
+                 from thread.h:7,
+                 from Scheduler.h:8,
+                 from Scheduler.cpp:5:
+Scheduler.cpp:283:12: error: return-statement with a value, in function returning ‘void’ [-fpermissive]
+  283 |     return EXIT_SUCCESS;
+      |            ^~~~~~~~~~~~
+Scheduler.cpp: In member function ‘void Scheduler::mutexTryUnlock()’:
+Scheduler.cpp:288:5: error: ‘_deleteTerminatedThread’ was not declared in this scope; did you mean ‘_eraseTerminatedThread’?
+  288 |     _deleteTerminatedThread();
+      |     ^~~~~~~~~~~~~~~~~~~~~~~
+      |     _eraseTerminatedThread
+Scheduler.cpp:291:62: error: return-statement with a value, in function returning ‘void’ [-fpermissive]
+  291 |         return uthreadException("can't unlock unlocked mutex");
+      |                                                              ^
+In file included from /usr/include/c++/9/cstdlib:75,
+                 from /usr/include/c++/9/ext/string_conversions.h:41,
+                 from /usr/include/c++/9/bits/basic_string.h:6493,
+                 from /usr/include/c++/9/string:55,
+                 from /usr/include/c++/9/stdexcept:39,
+                 from /usr/include/c++/9/array:39,
+                 from /usr/include/c++/9/tuple:39,
+                 from /usr/include/c++/9/bits/unique_ptr.h:37,
+                 from /usr/include/c++/9/memory:80,
+                 from thread.h:7,
+                 from Scheduler.h:8,
+                 from Scheduler.cpp:5:
+Scheduler.cpp:304:12: error: return-statement with a value, in function returning ‘void’ [-fpermissive]
+  304 |     return EXIT_SUCCESS;
+      |            ^~~~~~~~~~~~
+In file included from /usr/include/c++/9/cstdlib:75,
+                 from /usr/include/c++/9/ext/string_conversions.h:41,
+                 from /usr/include/c++/9/bits/basic_string.h:6493,
+                 from /usr/include/c++/9/string:55,
+                 from /usr/include/c++/9/stdexcept:39,
+                 from /usr/include/c++/9/array:39,
+                 from /usr/include/c++/9/tuple:39,
+                 from /usr/include/c++/9/bits/unique_ptr.h:37,
+                 from /usr/include/c++/9/memory:80,
+                 from thread.h:7,
+                 from Thread.cpp:4:
+uthread_utilities.h:10:11: error: expected unqualified-id before numeric constant
+   10 | const int EXIT_FAILURE = -1;
+      |           ^~~~~~~~~~~~
+Thread.cpp: In constructor ‘Thread::Thread(int, void (*)())’:
+Thread.cpp:19:21: error: invalid cast from type ‘std::unique_ptr<char []>’ to type ‘address_t’ {aka ‘long unsigned int’}
+   19 |     sp = (address_t)stack_ + STACK_SIZE - sizeof(address_t);
+      |                     ^~~~~~
+Thread.cpp:28:9: error: ‘sigemptyset’ was not declared in this scope
+   28 |     if (sigemptyset(&env_->__saved_mask) != 0)
+      |         ^~~~~~~~~~~
+In file included from uthread.cpp:6:
+uthread_utilities.h:17:5: error: ‘sigset_t’ does not name a type; did you mean ‘sigsetjmp’?
+   17 |     sigset_t sigset_; // Set of signals to be masked
+      |     ^~~~~~~~
+      |     sigsetjmp
+In file included from uthread.cpp:7:
+Scheduler.h:16:14: error: conflicting declaration ‘typedef void threadEntryPoint()’
+   16 | typedef void threadEntryPoint(void);
+      |              ^~~~~~~~~~~~~~~~
+In file included from uthread.cpp:6:
+uthread_utilities.h:8:7: note: previous declaration as ‘using threadEntryPoint = void (*)()’
+    8 | using threadEntryPoint = void(*)(void);
+      |       ^~~~~~~~~~~~~~~~
+In file included from uthread.cpp:7:
+Scheduler.h: In member function ‘int Scheduler::getTid() const’:
+Scheduler.h:113:39: error: ‘running_thread_’ was not declared in this scope
+  113 |     inline int getTid() const {return running_thread_;}
+      |                                       ^~~~~~~~~~~~~~~
+uthread.cpp: In function ‘int uthread_resume(int)’:
+uthread.cpp:55:1: warning: no return statement in function returning non-void [-Wreturn-type]
+   55 | }
+      | ^
+uthread.cpp: In function ‘int uthread_mutex_lock()’:
+uthread.cpp:85:23: error: ‘class std::unique_ptr<Scheduler>’ has no member named ‘mutexTryLock’
+   85 |     scheduler_manager.mutexTryLock();
+      |                       ^~~~~~~~~~~~
+uthread.cpp:86:1: warning: no return statement in function returning non-void [-Wreturn-type]
+   86 | }
+      | ^
+uthread.cpp: In function ‘int uthread_mutex_unlock()’:
+uthread.cpp:91:23: error: ‘class std::unique_ptr<Scheduler>’ has no member named ‘mutexTryUnlock’
+   91 |     scheduler_manager.mutexTryUnlock();
+      |                       ^~~~~~~~~~~~~~
+uthread.cpp:92:1: warning: no return statement in function returning non-void [-Wreturn-type]
+   92 | }
+      | ^
+In file included from uthread_exception.h:8,
+                 from uthread_exception.cpp:5:
+uthread_utilities.h:17:5: error: ‘sigset_t’ does not name a type
+   17 |     sigset_t sigset_; // Set of signals to be masked
+      |     ^~~~~~~~
+In file included from uthread_utilities.cpp:5:
+uthread_utilities.h:17:5: error: ‘sigset_t’ does not name a type
+   17 |     sigset_t sigset_; // Set of signals to be masked
+      |     ^~~~~~~~
+uthread_utilities.cpp: In constructor ‘SigMask::SigMask(int)’:
+uthread_utilities.cpp:8:3: error: class ‘SigMask’ does not have any field named ‘sigset_’
+    8 | : sigset_{}
+      |   ^~~~~~~
+uthread_utilities.cpp:10:20: error: ‘sigset_’ was not declared in this scope
+   10 |     if (sigaddset(&sigset_, signo))
+      |                    ^~~~~~~
+uthread_utilities.cpp:10:9: error: ‘sigaddset’ was not declared in this scope
+   10 |     if (sigaddset(&sigset_, signo))
+      |         ^~~~~~~~~
+uthread_utilities.cpp:12:9: error: ‘uthreadSystemException’ was not declared in this scope
+   12 |         uthreadSystemException("sigaddset failed at sig-mask ctor");
+      |         ^~~~~~~~~~~~~~~~~~~~~~
+uthread_utilities.cpp:14:21: error: ‘SIG_BLOCK’ was not declared in this scope
+   14 |     if (sigprocmask(SIG_BLOCK, &sigset_, nullptr))
+      |                     ^~~~~~~~~
+uthread_utilities.cpp:14:33: error: ‘sigset_’ was not declared in this scope
+   14 |     if (sigprocmask(SIG_BLOCK, &sigset_, nullptr))
+      |                                 ^~~~~~~
+uthread_utilities.cpp:14:9: error: ‘sigprocmask’ was not declared in this scope
+   14 |     if (sigprocmask(SIG_BLOCK, &sigset_, nullptr))
+      |         ^~~~~~~~~~~
+uthread_utilities.cpp:16:9: error: ‘uthreadSystemException’ was not declared in this scope
+   16 |         uthreadSystemException("sigprocmask block failed at sig-mask");
+      |         ^~~~~~~~~~~~~~~~~~~~~~
+uthread_utilities.cpp: In destructor ‘SigMask::~SigMask()’:
+uthread_utilities.cpp:21:21: error: ‘SIG_UNBLOCK’ was not declared in this scope
+   21 |     if (sigprocmask(SIG_UNBLOCK, &sigset_, nullptr))
+      |                     ^~~~~~~~~~~
+uthread_utilities.cpp:21:35: error: ‘sigset_’ was not declared in this scope
+   21 |     if (sigprocmask(SIG_UNBLOCK, &sigset_, nullptr))
+      |                                   ^~~~~~~
+uthread_utilities.cpp:21:9: error: ‘sigprocmask’ was not declared in this scope
+   21 |     if (sigprocmask(SIG_UNBLOCK, &sigset_, nullptr))
+      |         ^~~~~~~~~~~
+uthread_utilities.cpp:23:9: error: ‘uthreadSystemException’ was not declared in this scope
+   23 |         uthreadSystemException("sigprocmask unblock failed at sig-mask");
+      |         ^~~~~~~~~~~~~~~~~~~~~~

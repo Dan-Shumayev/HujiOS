@@ -8,7 +8,6 @@
 using threadEntryPoint = void(*)(void);
 
 const int EXIT_FAILURE = -1;
-const int EXIT_SUCCESS = 0;
 
 /**
  *  When an object of this class in scope, it ensures that given signal is masked
