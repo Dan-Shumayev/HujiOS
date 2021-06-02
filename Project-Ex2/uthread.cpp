@@ -8,6 +8,9 @@
 
 // TODO - implement threadLibraryError messages returning EXIT_FAILURE as well
 
+/** Has to be global as any function may use the scheduler. Smart pointer as a wrapper */
+std::unique_ptr<Scheduler> scheduler_manager = nullptr;
+
 /** Assumption: this function is the first called function */
 int uthread_init(int quantum_usecs)
 {
