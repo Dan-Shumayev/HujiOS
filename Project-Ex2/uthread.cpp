@@ -6,8 +6,6 @@
 #include "uthread_utilities.h" // Masking
 #include "Scheduler.h" // Scheduler, SIGVTALRM
 
-// TODO - implement threadLibraryError messages returning EXIT_FAILURE as well
-
 /** Has to be global as any function may use the scheduler. Smart pointer as a wrapper */
 std::unique_ptr<Scheduler> scheduler_manager = nullptr;
 
@@ -16,7 +14,7 @@ int uthread_init(int quantum_usecs)
 {
    if (quantum_usecs < 1)
    {
-       return threadLibraryError("Quantum length cannot be non-positive");
+       return uthreadException("Quantum must be positive");
    }
 
    /** Scheduling initialization part */
@@ -65,17 +63,30 @@ int uthread_get_tid()
 
 int uthread_get_total_quantums()
 {
+    // we aren't masking the timer signal, as this function doesn't affect the library
+    // state (either way we may get stale value)
     return scheduler_manager->getTotalQuantums();
 }
 
 int uthread_get_quantums(int tid)
 {
     SigMask timer_mask(SIGVTALRM);
-
     return scheduler_manager->getThreadQuantums(tid);
 }
 
 void timerHandlerGlobal(int signo)
 {
     scheduler_manager->timerHandler(signo);
+}
+
+int uthread_mutex_lock()
+{
+    SigMask timer_mask(SIGVTALRM);
+    scheduler_manager.mutexTryLock();
+}
+
+int uthread_mutex_unlock()
+{
+    SigMask timer_mask(SIGVTALRM);
+    scheduler_manager.mutexTryUnlock();
 }

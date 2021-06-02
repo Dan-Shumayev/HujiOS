@@ -7,10 +7,7 @@
 
 #include "thread.h" // User-Thread class
 #include <signal.h> // sigaction, sigset_t
-#include <list> // std::list
-#include <map> // std::map
 #include <sys/time.h> // itimerval
-#include <stdexcept> // std::domain_error
 #include <unordered_map> // std::unordered_map
 #include <deque> // std::deque
 #include <unordered_set> // std::unordered_set
@@ -40,6 +37,12 @@ private:
 
     /** Currently running thread's ID */
     int currentRunningThread_;
+
+    /** Equals to the thread's ID which locks the mutex, otherwise if no one locks it, equals to -1 */
+    int mutexLockedByThreadId_;
+
+    /** threads waiting for the mutex to be unlocked, upon mutex unlocking, one of them becomes READY */
+    std::unordered_set<int> blockedByMutexThreads_;
 
     /** Thread's ID to be terminated during the next running thread */
     int tidToTerminate_;
@@ -141,6 +144,16 @@ public:
      * @param signo Here only because of sa_handler function's signature
      */
     void timerHandler(int signo);
+
+    /**
+     * Tries locking the mutex in order to perform a critical section.
+     */
+    void mutexTryLock();
+
+    /**
+     * Tries unlocking the mutex.
+     */
+    void mutexTryUnlock();
 
     /**
      * Wrapper for _timeHandler function, as we can't pass function members as parameters

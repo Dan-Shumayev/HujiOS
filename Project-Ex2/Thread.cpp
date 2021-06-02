@@ -27,6 +27,6 @@ Thread::Thread(int id, void (*f)(void))
     (env_->__jmpbuf)[JB_PC] = translate_address(pc);
     if (sigemptyset(&env_->__saved_mask) != 0)
     {
-        systemError("sigemptyset");
+        uthreadSystemException("sigemptyset");
     }
 }

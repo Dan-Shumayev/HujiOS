@@ -80,7 +80,7 @@ int uthread_resume(int tid);
  * If the mutex is already locked by this thread, it is considered an error. 
  * Return value: On success, return 0. On failure, return -1.
 */
-int uthread_mutex_lock()
+int uthread_mutex_lock();
 
 
 /*
@@ -90,7 +90,7 @@ int uthread_mutex_lock()
  * If the mutex is already unlocked, it is considered an error. 
  * Return value: On success, return 0. On failure, return -1.
 */
-int uthread_mutex_unlock()
+int uthread_mutex_unlock();
 
 
 /*
