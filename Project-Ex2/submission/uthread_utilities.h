@@ -5,8 +5,6 @@
 #ifndef PROJECT_EX2_UTHREAD_UTILITIES_H
 #define PROJECT_EX2_UTHREAD_UTILITIES_H
 
-using threadEntryPoint = void(*)(void);
-
 const int EXIT_FAILURE = -1;
 
 /**
