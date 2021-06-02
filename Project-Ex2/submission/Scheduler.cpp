@@ -136,7 +136,8 @@ void Scheduler::timerHandler(int signo)
     _deleteTerminatedThread();
     if (signo != SIGVTALRM)
     {
-        throw uthreadException("Not the virtual timer signal. SIGVTALRM is required.");
+        uthreadException("Not the virtual timer signal. SIGVTALRM is required.");
+        return;
     }
     readyQueue_.emplace_back(currentRunningThread_);
     _preempt(PreemptReason::QuantumExpiration);
@@ -147,11 +148,11 @@ int Scheduler::spawnThread(threadEntryPoint function)
     _deleteTerminatedThread();
     if (function == nullptr)
     {
-        throw uthreadException("Can't spawn thread with nullptr function");
+        return uthreadException("Can't spawn thread with nullptr function");
     }
     if (threads_.size() == MAX_THREAD_NUM)
     {
-        throw uthreadException("Maximum thread count was reached");
+        return uthreadException("Maximum thread count was reached");
     }
 
     int nextTid = _getLowestAvailableId();
@@ -272,7 +273,7 @@ int Scheduler::mutexTryLock()
     // locked
     if (mutexLockedByThreadId_ == currentRunningThread_) // the thread locking the mutex wants to re-lock?
     {
-        throw uthreadException("the thread locking the mutex wants to re-lock it");
+        return uthreadException("the thread locking the mutex wants to re-lock it");
     }
 
     // here the thread has to be blocked because of the mutex locked
@@ -287,7 +288,7 @@ int Scheduler::mutexTryUnlock()
     _deleteTerminatedThread();
     if (mutexLockedByThreadId_ == -1) // already unlocked
     {
-        throw uthreadException("can't unlock unlocked mutex");
+        return uthreadException("can't unlock unlocked mutex");
     }
 
     mutexLockedByThreadId_ = -1; // mutex unlocked
