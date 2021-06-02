@@ -54,22 +54,23 @@ address_t translate_address(address_t addr)
  */
 class Thread
 {
-public:
-    /** Enumerate a thread's execution state */
-    enum class Status { RUNNING, READY, BLOCKED };
 private:
-    size_t tid_; // Thread id in the range 0-99
-    Status state_; // Track thread's execution state
+    int tid_; // Thread id in the range 0-99
     sigjmp_buf env_; // Thread's execution context
     std::unique_ptr<char[]> stack_; // Thread's stack represented by an array of STACK_SIZE bytes
-    size_t numOfQuantum_; // Number of quantum the thread has occupied the CPU
+    int numOfQuantum_; // Number of quantum the thread has occupied the CPU
 public:
+    /**
+     * Default-constructor - only for the main thread (id==0).
+     */
+    Thread();
+
     /**
     * Second Thread's ctr
     * @param tid - Thread's id - should be in range 0-99
     * @param f - Thread's entry point
     */
-    Thread(const size_t& tid, void (*f)(void));
+    Thread(int tid, void (*f)(void));
 
     // prohibit copying Thread objects
     Thread(const Thread&) = delete;
@@ -78,18 +79,7 @@ public:
     /**
      * @return Thread's ID
      */
-    size_t get_id() const {return tid_;}
-
-    /**
-     * @return Current thread's execution state
-     */
-    Status get_state() const {return state_;}
-
-    /**
-     * Setting thread's execution state
-     * @param state The state to set - RUNNING/READY/BLOCKED
-     */
-    void set_state(Status state);
+    int get_id() const {return tid_;}
 
     /**
      * @return Amount of quantum slots the thread has executed so far

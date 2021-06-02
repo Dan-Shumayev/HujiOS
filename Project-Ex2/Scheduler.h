@@ -22,15 +22,21 @@ typedef void threadEntryPoint(void);
  * Round-Robin scheduler for user-level threads.
  */
 class Scheduler {
-    // Private members
+public:
+    /** Enumerate a thread's execution state */
+    enum class PreemptReason { Termination, QuantumExpiration, Blocking };
+private:
     /** Thread control structures: */
 
-    /** All thread (ready, running and blocked) IDs mapping to respective thread objects.
+    /** All threads' (ready, running and blocked) IDs mapping to respective thread objects.
         unordered map is good for pure lookup-retrieval purposes - Search, insertion, and removal O(1) */
     std::unordered_map<int, Thread> threads_;
 
     /** Queue of ready thread IDs */
     std::deque<int> readyQueue_;
+
+    /** unordered (don't care about the order as there could be "gaps", and no need for order) */
+    std::unordered_set<int> blockedThreads_;
 
     /** Currently running thread's ID */
     int currentRunningThread_;
@@ -38,18 +44,10 @@ class Scheduler {
     /** Thread's ID to be terminated during the next running thread */
     int tidToTerminate_;
 
-    /** Unordered (don't careset of blocked thread ID's */
-    std::unordered_set<int> blockedThreadSet;
+    struct sigaction sigAlarm_;
 
-    std::list<threadSharedPtr> thread_ready_list_;
-    std::map<size_t, threadSharedPtr> tid_to_thread_map_;
-        /** Accounting information: */
-    int thread_quantum_;
+    /** Accounting information: */
     int total_quantum_;
-        /** Signal-handling: */
-    struct itimerval virtual_timer_; // Dedicated to time the running thread's execution
-    struct sigaction signal_handler_;
-    sigset_t blocked_signals_;
 
     /**
      * @return Returns the the lowest unused thread ID. If no unused ID, return -1.
@@ -65,9 +63,25 @@ class Scheduler {
 
     /**
      * Preempts the running thread, resuming the next ready thread
+     * @param reason The reason for preemption the running thread
      */
-    void _preempt();
+    void _preempt(PreemptReason preemptReason);
 
+    /**
+     * Preempts the running thread, resuming the next ready thread
+     * @param tid The ready thread whose id==tid to delete from the ready queue
+     */
+    void _deleteReadyThread(int tid);
+
+    /**
+     * Sets timer signal alarm for the entire process. Every quantum_usecs micro-seconds the
+     * signal is raised, scheduling the next thread.
+     * @param quantum_usecs Each thread is occupying the CPU for this time in micro-secs
+     */
+    void _setTimerSignal(int quantum_usecs);
+
+    /** Looking for possible thread to be terminated from previous execution context, if exists - deleting it */
+    void _eraseTerminatedThread();
 public:
     // there will be one instance created and the library calls will be forwarded to it
     Scheduler(int quantum_usecs);
@@ -108,7 +122,7 @@ public:
     int getThreadQuantums(int tid);
 
     /**
-     * Blocks a thread, may cause a schedule operation
+     * Blocks a thread, may cause a preemption operation
      * @param tid Thread id to be blocked, mustn't be the main thread (==0)
      * @return 0 on success, else -1 indicating error code
      */
@@ -116,10 +130,23 @@ public:
 
     /**
      * Resumes a thread.
-     * @param tid Thread id to be resumed. May or may not be blocked already.
+     * @param tid Thread id to be resumed. May or may not be already blocked.
      * @return 0 on success, else -1 indicating error code
      */
     int resumeThread(int tid);
+
+    /**
+     * This method is in charge of preempting the running thread, scheduling the next one
+     * to occupy the CPU.
+     * @param signo Here only because of sa_handler function's signature
+     */
+    void timerHandler(int signo);
+
+    /**
+     * Wrapper for _timeHandler function, as we can't pass function members as parameters
+     * @param signo The ID of the timer signal.
+     */
+    static void timerHandlerGlobal(int signo);
 };
 
 

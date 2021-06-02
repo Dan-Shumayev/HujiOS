@@ -6,14 +6,6 @@
 #include "uthread_utilities.h" // Masking
 #include "Scheduler.h" // Scheduler, SIGVTALRM
 
-using threadEntryPoint = void(*)(void);
-
-const int EXIT_FAILURE = -1;
-const int EXIT_SUCCESS = 0;
-
-/** Has to be global as any function may use the scheduler. Smart pointer as a wrapper */
-std::unique_ptr<Scheduler> scheduler_manager = nullptr;
-
 // TODO - implement threadLibraryError messages returning EXIT_FAILURE as well
 
 /** Assumption: this function is the first called function */
@@ -27,8 +19,9 @@ int uthread_init(int quantum_usecs)
    /** Scheduling initialization part */
    // mask timer preemption to prevent interruption of the initialization process
    SigMask timer_mask(SIGVTALRM);
-   auto scheduler_init = new Scheduler(quantum_usecs);
-   scheduler_manager = std::unique_ptr<Scheduler>(scheduler_init); //TODO Black box meanwhile
+   auto scheduler_init = new Scheduler(quantum_usecs); // pointer to Scheduler object
+   scheduler_manager = std::unique_ptr<Scheduler>(scheduler_init); // the pointer is copied and not the
+   // object itself, so no problem of copy-ctr
 
    return EXIT_SUCCESS;
 }
@@ -51,13 +44,13 @@ int uthread_terminate(int tid)
 int uthread_block(int tid)
 {
     SigMask timer_mask(SIGVTALRM);
-    return scheduler_manager->blockThread(tid); // TODO black box meanwhile
+    return scheduler_manager->blockThread(tid);
 }
 
 int uthread_resume(int tid)
 {
     SigMask timer_mask(SIGVTALRM);
-    scheduler_manager->resumeThread(tid); // TODO black box meanwhile
+    scheduler_manager->resumeThread(tid);
 }
 
 int uthread_get_tid()
@@ -77,4 +70,9 @@ int uthread_get_quantums(int tid)
     SigMask timer_mask(SIGVTALRM);
 
     return scheduler_manager->getThreadQuantums(tid);
+}
+
+void timerHandlerGlobal(int signo)
+{
+    scheduler_manager->timerHandler(signo);
 }

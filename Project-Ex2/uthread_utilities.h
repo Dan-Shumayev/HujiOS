@@ -5,6 +5,14 @@
 #ifndef PROJECT_EX2_UTHREAD_UTILITIES_H
 #define PROJECT_EX2_UTHREAD_UTILITIES_H
 
+using threadEntryPoint = void(*)(void);
+
+const int EXIT_FAILURE = -1;
+const int EXIT_SUCCESS = 0;
+
+/** Has to be global as any function may use the scheduler. Smart pointer as a wrapper */
+std::unique_ptr<Scheduler> scheduler_manager = nullptr;
+
 /**
  *  When an object of this class in scope, it ensures that given signal is masked
  */
