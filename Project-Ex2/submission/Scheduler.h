@@ -153,13 +153,13 @@ public:
      * Tries unlocking the mutex.
      */
     int mutexTryUnlock();
-
-    /**
-     * Wrapper for _timeHandler function, as we can't pass function members as parameters
-     * @param signo The ID of the timer signal.
-     */
-    static void timerHandlerGlobal(int signo);
 };
+
+/**
+ * Wrapper for _timeHandler function, as we can't pass function members as parameters
+ * @param signo The ID of the timer signal.
+ */
+void timerHandlerGlobal(int signo);
 
 
 #endif //PROJECT_EX2_SCHEDULER_H
