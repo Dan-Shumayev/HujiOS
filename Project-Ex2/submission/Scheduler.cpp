@@ -13,7 +13,8 @@ Scheduler::Scheduler(int quantum_usecs) // map, deque, set and struct are defaul
     tidToTerminate_(-1), // -1 indicates no thread is supposed to be terminated
     total_quantum_(1),
     sigAlarm_{timerHandlerGlobal}, // initializes the first field of sigAlarm (sa_handler) as needed, others zeroed
-    mutexLockedByThreadId_(-1)
+    mutexLockedByThreadId_(-1),
+  threadQuantum_(quantum_usecs)
     {
     /** Insert the main thread into the entire collection of concurrent threads,
     Assuming no element with this ID in threads_. using piecewise_construct because it's not copyable
@@ -33,7 +34,7 @@ Scheduler::Scheduler(int quantum_usecs) // map, deque, set and struct are defaul
     }
 
     // setup timer signal every quantum_usecs micro-secs for all threads (including main thread)
-    _setTimerSignal(quantum_usecs);
+    _setTimerSignal(threadQuantum_);
 }
 
 /** Private (internal purposes) methods */
@@ -89,6 +90,12 @@ void Scheduler::_preempt(PreemptReason preemptReason)
         // to another one, so main thread's env is zero (either way, it's an optimization)
         return; // Let the main thread resume its execution
     }
+
+    // "reset" the timer for the newly resumed thread
+    // note that all callers to '_preempt' are masked
+    // so the following timer can't interrupt us during this
+    // routine until we jump
+    _setTimerSignal(threadQuantum_);
     if (preemptReason == PreemptReason::Termination)
     {
         tidToTerminate_ = preemptedThreadId;

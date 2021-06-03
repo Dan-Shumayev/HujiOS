@@ -47,6 +47,7 @@ private:
     int tidToTerminate_;
 
     struct sigaction sigAlarm_;
+    int threadQuantum_; // the time in micro-seconds for each thread to occupy the CPU
 
     /** Accounting information: */
     int total_quantum_;
