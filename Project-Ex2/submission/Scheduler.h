@@ -13,7 +13,6 @@
 #include <unordered_set> // std::unordered_set
 
 using threadSharedPtr = std::shared_ptr<Thread>;
-typedef void threadEntryPoint(void);
 
 /**
  * Round-Robin scheduler for user-level threads.
@@ -48,6 +47,7 @@ private:
     int tidToTerminate_;
 
     struct sigaction sigAlarm_;
+    int threadQuantum_; // the time in micro-seconds for each thread to occupy the CPU
 
     /** Accounting information: */
     int total_quantum_;
@@ -84,7 +84,7 @@ private:
     void _setTimerSignal(int quantum_usecs);
 
     /** Looking for possible thread to be terminated from previous execution context, if exists - deleting it */
-    void _eraseTerminatedThread();
+    void _deleteTerminatedThread();
 public:
     // there will be one instance created and the library calls will be forwarded to it
     Scheduler(int quantum_usecs);
@@ -148,19 +148,19 @@ public:
     /**
      * Tries locking the mutex in order to perform a critical section.
      */
-    void mutexTryLock();
+    int mutexTryLock();
 
     /**
      * Tries unlocking the mutex.
      */
-    void mutexTryUnlock();
-
-    /**
-     * Wrapper for _timeHandler function, as we can't pass function members as parameters
-     * @param signo The ID of the timer signal.
-     */
-    static void timerHandlerGlobal(int signo);
+    int mutexTryUnlock();
 };
+
+/**
+ * Wrapper for _timeHandler function, as we can't pass function members as parameters
+ * @param signo The ID of the timer signal.
+ */
+void timerHandlerGlobal(int signo);
 
 
 #endif //PROJECT_EX2_SCHEDULER_H

@@ -1,0 +1,18 @@
+dans
+207050691
+EX: 2
+
+ANSWERS:
+
+
+ Assignment 1:
+
+	Code attached with. The code is heavily commented.
+
+ Assignment 2:
+
+1. It avoids the overhead that accompanies kernel-level threads which are managed by the kernel. The disadvantage of such multi-threading is that the kernel has to handle the scheduling of the threads, and actually the entire state machine. As mentioned, it includes many system calls which causes trap, which is an overhead we've seen in Ex.1.
+
+2. Advantage: if one tab fails for some reason and is supposed to be halted, the other ones will continue as usual, because process are independent entities. Disadvantage: Each process occupies lots of data, and requires its own stack. Moreover, in order to choose a different tab, a context-switch is needed which is expensive also.
+
+3.

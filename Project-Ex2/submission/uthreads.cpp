@@ -32,7 +32,7 @@ int uthread_spawn(void (*f)(void))
     SigMask timer_mask(SIGVTALRM);
 
     int nextSpawnedThreadId = scheduler_manager->spawnThread(f);
-    // it's assigned with the newly spawn thread's ID, otherwise with -1 (EXIT_FAILURE)
+    // it's assigned with the newly spawn thread's ID, otherwise with -1 (EXIT_FAIL)
     return nextSpawnedThreadId;
 }
 
@@ -51,7 +51,7 @@ int uthread_block(int tid)
 int uthread_resume(int tid)
 {
     SigMask timer_mask(SIGVTALRM);
-    scheduler_manager->resumeThread(tid);
+    return scheduler_manager->resumeThread(tid);
 }
 
 int uthread_get_tid()
@@ -82,11 +82,11 @@ void timerHandlerGlobal(int signo)
 int uthread_mutex_lock()
 {
     SigMask timer_mask(SIGVTALRM);
-    scheduler_manager.mutexTryLock();
+    return scheduler_manager->mutexTryLock();
 }
 
 int uthread_mutex_unlock()
 {
     SigMask timer_mask(SIGVTALRM);
-    scheduler_manager.mutexTryUnlock();
+    return scheduler_manager->mutexTryUnlock();
 }

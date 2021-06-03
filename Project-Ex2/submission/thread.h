@@ -16,38 +16,16 @@ typedef unsigned long address_t; // 64-bit
 #define JB_SP 6
 #define JB_PC 7
 
-/* A translation is required when using an address of a variable.
-   Use this as a black box in your code. */
-address_t translate_address(address_t addr)
-{
-    address_t ret;
-    asm volatile("xor    %%fs:0x30,%0\n"
-		"rol    $0x11,%0\n"
-                 : "=g" (ret)
-                 : "0" (addr));
-    return ret;
-}
-
 #else
 /* code for 32 bit Intel arch */
 
-typedef size_t address_t; // 32-bit
+typedef unsigned int address_t; // 32-bit
 #define JB_SP 4
 #define JB_PC 5
 
-/* A translation is required when using an address of a variable.
-   Use this as a black box in your code. */
-address_t translate_address(address_t addr)
-{
-    address_t ret;
-    asm volatile("xor    %%gs:0x18,%0\n"
-                 "rol    $0x9,%0\n"
-                : "=g" (ret)
-                : "0" (addr));
-    return ret;
-}
-
 #endif
+
+address_t translate_address(address_t addr);
 
 /**
  * Thread object representation
@@ -57,7 +35,7 @@ class Thread
 private:
     int tid_; // Thread id in the range 0-99
     sigjmp_buf env_; // Thread's execution context
-    std::unique_ptr<char[]> stack_; // Thread's stack represented by an array of STACK_SIZE bytes
+    char* stack_; // Thread's stack represented by an array of STACK_SIZE bytes
     int numOfQuantum_; // Number of quantum the thread has occupied the CPU
 public:
     /**
@@ -94,7 +72,11 @@ public:
     /**
      * @return Returns the thread's environment struct
      */
+<<<<<<< HEAD
     sigjmp_buf get_env() const {return env_;}
+=======
+    sigjmp_buf& get_env() {return env_;}
+>>>>>>> patch
 };
 
 #endif //PROJECT_EX2_THREAD_H

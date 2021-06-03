@@ -13,5 +13,5 @@ void uthreadSystemException(const char *msg)
 int uthreadException(const char *msg)
 {
     std::cerr << "thread library error: " << msg << std::endl;
-    return EXIT_FAILURE;
+    return EXIT_FAIL;
 }

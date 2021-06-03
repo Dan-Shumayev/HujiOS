@@ -13,7 +13,8 @@ Scheduler::Scheduler(int quantum_usecs) // map, deque, set and struct are defaul
     tidToTerminate_(-1), // -1 indicates no thread is supposed to be terminated
     total_quantum_(1),
     sigAlarm_{timerHandlerGlobal}, // initializes the first field of sigAlarm (sa_handler) as needed, others zeroed
-    mutexLockedByThreadId_(-1)
+    mutexLockedByThreadId_(-1),
+  threadQuantum_(quantum_usecs)
     {
     /** Insert the main thread into the entire collection of concurrent threads,
     Assuming no element with this ID in threads_. using piecewise_construct because it's not copyable
@@ -33,7 +34,7 @@ Scheduler::Scheduler(int quantum_usecs) // map, deque, set and struct are defaul
     }
 
     // setup timer signal every quantum_usecs micro-secs for all threads (including main thread)
-    _setTimerSignal(quantum_usecs);
+    _setTimerSignal(threadQuantum_);
 }
 
 /** Private (internal purposes) methods */
@@ -57,7 +58,7 @@ int Scheduler::_getLowestAvailableId() const
         }
     }
 
-    return EXIT_FAILURE;
+    return EXIT_FAIL;
 }
 
 bool Scheduler::_isThreadExist(int tid)
@@ -89,6 +90,15 @@ void Scheduler::_preempt(PreemptReason preemptReason)
         // to another one, so main thread's env is zero (either way, it's an optimization)
         return; // Let the main thread resume its execution
     }
+<<<<<<< HEAD
+=======
+
+    // "reset" the timer for the newly resumed thread
+    // note that all callers to '_preempt' are masked
+    // so the following timer can't interrupt us during this
+    // routine until we jump
+    _setTimerSignal(threadQuantum_);
+>>>>>>> patch
     if (preemptReason == PreemptReason::Termination)
     {
         tidToTerminate_ = preemptedThreadId;
@@ -124,7 +134,7 @@ void Scheduler::_deleteReadyThread(int tid)
 void Scheduler::_deleteTerminatedThread() {
     if (tidToTerminate_ != -1) // is there a thread to terminate?
     {
-        threads_.erase(_tidBeingTerminated);
+        threads_.erase(tidToTerminate_);
         tidToTerminate_ = -1; // nothing to erase for now
     }
 }
@@ -136,7 +146,8 @@ void Scheduler::timerHandler(int signo)
     _deleteTerminatedThread();
     if (signo != SIGVTALRM)
     {
-        return uthreadException("Not the virtual timer signal. SIGVTALRM is required.");
+        uthreadException("Not the virtual timer signal. SIGVTALRM is required.");
+        return;
     }
     readyQueue_.emplace_back(currentRunningThread_);
     _preempt(PreemptReason::QuantumExpiration);
@@ -155,9 +166,9 @@ int Scheduler::spawnThread(threadEntryPoint function)
     }
 
     int nextTid = _getLowestAvailableId();
-    if (nextTid == EXIT_FAILURE)
+    if (nextTid == EXIT_FAIL)
     {
-        return EXIT_FAILURE;
+        return EXIT_FAIL;
     }
     /** Insert the newly spawned thread into the entire collection of concurrent threads,
         Assuming no element with this ID in threads_. using some trickery because it's not copyable*/
@@ -169,7 +180,7 @@ int Scheduler::spawnThread(threadEntryPoint function)
     return nextTid;
 }
 
-int terminateThread(int tid)
+int Scheduler::terminateThread(int tid)
 {
     _deleteTerminatedThread();
     if (tid == 0) // Main thread
@@ -201,7 +212,6 @@ int terminateThread(int tid)
 int Scheduler::getThreadQuantums(int tid)
 {
     _deleteTerminatedThread();
-    Thread* thread;
     if (!_isThreadExist(tid) || tidToTerminate_ == tid)
     {
         return uthreadException("Can't get quantums of non existent thread");
@@ -252,7 +262,7 @@ int Scheduler::resumeThread(int tid)
         return EXIT_SUCCESS;
     }
     auto threadIt = blockedByMutexThreads_.find(tid);
-    if (threadIt == blockedByMutexThreads_end())
+    if (threadIt == blockedByMutexThreads_.end())
     {
         // it's not mutex-blocked, then delete it from blocked threads and queue it to the ready threads
         blockedThreads_.erase(threadIt);
@@ -262,13 +272,13 @@ int Scheduler::resumeThread(int tid)
     return EXIT_SUCCESS;
 }
 
-void Scheduler::mutexTryLock()
+int Scheduler::mutexTryLock()
 {
     _deleteTerminatedThread();
     if (mutexLockedByThreadId_ == -1) // available mutex
     {
         mutexLockedByThreadId_ = currentRunningThread_;
-        return EXIT_SUCCESS
+        return EXIT_SUCCESS;
     }
     // locked
     if (mutexLockedByThreadId_ == currentRunningThread_) // the thread locking the mutex wants to re-lock?
@@ -283,7 +293,7 @@ void Scheduler::mutexTryLock()
     return EXIT_SUCCESS;
 }
 
-void Scheduler::mutexTryUnlock()
+int Scheduler::mutexTryUnlock()
 {
     _deleteTerminatedThread();
     if (mutexLockedByThreadId_ == -1) // already unlocked

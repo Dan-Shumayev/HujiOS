@@ -2,6 +2,39 @@
 // Created by dan-os on 30/05/2021.
 //
 #include "thread.h"
+#include <signal.h>
+
+#ifdef __x86_64__ // Pre-defined compiler macro ($ echo | gcc -E -dM -)
+/* code for 64 bit Intel arch */
+
+/* A translation is required when using an address of a variable.
+   Use this as a black box in your code. */
+address_t translate_address(address_t addr)
+{
+    address_t ret;
+    asm volatile("xor    %%fs:0x30,%0\n"
+		"rol    $0x11,%0\n"
+                 : "=g" (ret)
+                 : "0" (addr));
+    return ret;
+}
+
+#else
+/* code for 32 bit Intel arch */
+
+/* A translation is required when using an address of a variable.
+   Use this as a black box in your code. */
+address_t translate_address(address_t addr)
+{
+    address_t ret;
+    asm volatile("xor    %%gs:0x18,%0\n"
+                 "rol    $0x9,%0\n"
+                : "=g" (ret)
+                : "0" (addr));
+    return ret;
+}
+
+#endif
 
 Thread::Thread()
 : tid_(0), numOfQuantum_(0), stack_(nullptr), env_{} {}
