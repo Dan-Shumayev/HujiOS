@@ -32,4 +32,3 @@ depend:
 
 tar:
 		$(TAR) $(TARFLAGS) $(TARNAME) $(TARSRCS)
-
