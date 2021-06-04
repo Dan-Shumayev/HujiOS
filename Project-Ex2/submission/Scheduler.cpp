@@ -90,15 +90,13 @@ void Scheduler::_preempt(PreemptReason preemptReason)
         // to another one, so main thread's env is zero (either way, it's an optimization)
         return; // Let the main thread resume its execution
     }
-<<<<<<< HEAD
-=======
 
     // "reset" the timer for the newly resumed thread
     // note that all callers to '_preempt' are masked
     // so the following timer can't interrupt us during this
     // routine until we jump
     _setTimerSignal(threadQuantum_);
->>>>>>> patch
+
     if (preemptReason == PreemptReason::Termination)
     {
         tidToTerminate_ = preemptedThreadId;
@@ -128,7 +126,6 @@ void Scheduler::_deleteReadyThread(int tid)
             readyQueue_.erase(threadIt);
         }
     }
-    return;
 }
 
 void Scheduler::_deleteTerminatedThread() {

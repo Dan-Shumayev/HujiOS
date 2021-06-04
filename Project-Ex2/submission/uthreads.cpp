@@ -27,7 +27,7 @@ int uthread_init(int quantum_usecs)
    return EXIT_SUCCESS;
 }
 
-int uthread_spawn(void (*f)(void))
+int uthread_spawn(void (*f)())
 {
     SigMask timer_mask(SIGVTALRM);
 

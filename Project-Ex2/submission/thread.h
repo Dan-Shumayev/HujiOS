@@ -48,7 +48,7 @@ public:
     * @param tid - Thread's id - should be in range 0-99
     * @param f - Thread's entry point
     */
-    Thread(int tid, void (*f)(void));
+    Thread(int tid, void (*f)());
 
     // prohibit copying Thread objects
     Thread(const Thread&) = delete;
@@ -72,11 +72,8 @@ public:
     /**
      * @return Returns the thread's environment struct
      */
-<<<<<<< HEAD
-    sigjmp_buf get_env() const {return env_;}
-=======
-    sigjmp_buf& get_env() {return env_;}
->>>>>>> patch
+    sigjmp_buf& get_env() {return env_;} // referenced as we can't return array types
+                                            // bc it's not copyable
 };
 
 #endif //PROJECT_EX2_THREAD_H

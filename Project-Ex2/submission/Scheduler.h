@@ -12,10 +12,10 @@
 #include <deque> // std::deque
 #include <unordered_set> // std::unordered_set
 
-using threadSharedPtr = std::shared_ptr<Thread>;
 
 /**
  * Round-Robin scheduler for user-level threads.
+ * This class is a singleton.
  */
 class Scheduler {
 public:
@@ -81,13 +81,13 @@ private:
      * signal is raised, scheduling the next thread.
      * @param quantum_usecs Each thread is occupying the CPU for this time in micro-secs
      */
-    void _setTimerSignal(int quantum_usecs);
+    static void _setTimerSignal(int quantum_usecs);
 
     /** Looking for possible thread to be terminated from previous execution context, if exists - deleting it */
     void _deleteTerminatedThread();
 public:
     // there will be one instance created and the library calls will be forwarded to it
-    Scheduler(int quantum_usecs);
+    explicit Scheduler(int quantum_usecs);
 
     // prohibit copying Scheduler objects
     Scheduler(const Scheduler&) = delete;

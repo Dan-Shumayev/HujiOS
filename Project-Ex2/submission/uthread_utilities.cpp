@@ -4,8 +4,6 @@
 
 #include "uthread_exception.h"
 #include "uthread_utilities.h"
-#include "thread.h"
-#include <signal.h>
 
 SigMask::SigMask(int signo)
 : sigset_{}
