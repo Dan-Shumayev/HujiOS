@@ -304,7 +304,12 @@ int Scheduler::mutexTryUnlock()
         int threadIdToLockMutex = *(blockedByMutexThreads_.begin()); // pick an arbitrary thread to lock the mutex
         resumeThread(threadIdToLockMutex); /** TODO - here we have a mistake. we have to ensure that our
                                                 mutex-blocked thread isn't blocked by uthread_block.
-                                                if it's, then we won't resume it. */
+                                                if it's, then we won't resume it.
+                                                blockedbythread / blockedbymutex / blockedbyboth.
+                                                we release a thread:
+                                                blockedbythread->unblockbythread /
+                                                blockedbymutex->unlockmutex /
+                                                blockedbyboth->has to be resumed by mutex-unlock and by thread*/
         blockedThreads_.erase(threadIdToLockMutex);
         blockedByMutexThreads_.erase(threadIdToLockMutex);
     }

@@ -37,3 +37,5 @@ README_*
 GNU*
 .idea/
 *.swp
+cmake*
+CMake*
