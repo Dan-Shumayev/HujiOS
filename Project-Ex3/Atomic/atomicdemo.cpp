@@ -1,6 +1,6 @@
-#include <pthread.h>
-#include <cstdio>
-#include <atomic>
+#include <pthread.h> // threading library
+#include <cstdio> // printf
+#include <atomic> // std::atomic
 
 #define MT_LEVEL 5
 

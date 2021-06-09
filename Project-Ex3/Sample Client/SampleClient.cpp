@@ -10,8 +10,6 @@ public:
 	std::string content;
 };
 
-// TODO - static_cast
-
 class KChar : public K2, public K3{
 public:
 	KChar(char c) : c(c) { }
