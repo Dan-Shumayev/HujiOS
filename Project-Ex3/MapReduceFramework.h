@@ -2,7 +2,7 @@
 #define MAPREDUCEFRAMEWORK_H
 
 #include "MapReduceClient.h"
-
+// TODO - we have to implement this library into a static library
 typedef void* JobHandle;
 
 enum stage_t {UNDEFINED_STAGE=0, MAP_STAGE=1, SHUFFLE_STAGE=2, REDUCE_STAGE=3};
