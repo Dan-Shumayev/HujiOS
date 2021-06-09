@@ -8,8 +8,12 @@
 // the key, value for the map function and the MapReduceFramework
 class K1 {
 public:
-	virtual ~K1(){}
-	virtual bool operator<(const K1 &other) const = 0;
+	virtual ~K1(){} // We define the destructor as virtual because in case of a pointer pointing to the base class
+	                // (K1 in this case), but the dynamic type is a derived class of it, so without virtual dtr,
+	                // the base class's destructor will be called, resulting in possible memory leak of resources
+	                // managed by the derived class.
+	virtual bool operator<(const K1 &other) const = 0; // pure virtual function - the only ones to implement this kind
+	                                                    // of function are the derived classes
 };
 
 class V1 {

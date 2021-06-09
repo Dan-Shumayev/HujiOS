@@ -10,6 +10,8 @@ public:
 	std::string content;
 };
 
+// TODO - static_cast
+
 class KChar : public K2, public K3{
 public:
 	KChar(char c) : c(c) { }
@@ -88,7 +90,7 @@ int main(int argc, char** argv)
             printf("stage %d, %f%% \n", 
 			state.stage, state.percentage);
         }
-		usleep(100000);
+		usleep(100000); // let threads do their work
         last_state = state;
 		getJobState(job, &state);
 	}
@@ -96,7 +98,7 @@ int main(int argc, char** argv)
 			state.stage, state.percentage);
 	printf("Done!\n");
 	
-	closeJobHandle(job);
+	closeJobHandle(job); // probably killing the threads, as the job is done
 	
 	for (OutputPair& pair: outputVec) {
 		char c = ((const KChar*)pair.first)->c;
