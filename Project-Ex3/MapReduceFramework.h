@@ -3,7 +3,6 @@
 
 #include "MapReduceClient.h"
 
-// TODO - we have to implement this library into a static library
 
 /**
  * Identifier of a running job. Returned when starting a job and used by other framework functions
