@@ -16,7 +16,7 @@ private:
     // function receive the job handle as a void*, resulting required static_cast from
     // a smart pointer (we'd wish to define) into a void*. But, casting a smart pointer
     // defects its destruction.
-    IntermediateVec intermediateVec_;
+    IntermediateVec intermediateVec_; // TODO - associated logic
 
 public:
     ThreadContext(size_t tid, JobContext* jobContext)
@@ -24,7 +24,7 @@ public:
 
     JobContext& getJobContext() {return *currentJobContext_;};
 
-    size_t getThreadId() const {return pthread_thread_id_;};
+    size_t getThreadId() const {return pthread_thread_id_;}; // TODO - Manage pthread data inside ThreadContext
 
     void invokeMapPhase();
 
