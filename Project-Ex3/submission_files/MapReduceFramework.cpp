@@ -3,7 +3,7 @@
 //
 
 #include "MapReduceFramework.h"
-#include "Barrier/Barrier.h"
+#include "Barrier.h"
 #include "job_context.h"
 #include "thread_context.h"
 #include "exceptions.h"
@@ -34,6 +34,8 @@ void *threadEntryPoint(void *context)
 
     /** Reduce phase */
     threadContext->invokeReducePhase();
+
+    return nullptr; // we must (as per-pthread_create) return something as we promise returning void-pointer, hence null
 }
 
 JobHandle startMapReduceJob(const MapReduceClient &client, const InputVec &inputVec,
