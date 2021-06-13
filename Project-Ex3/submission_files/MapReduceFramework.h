@@ -3,7 +3,6 @@
 
 #include "MapReduceClient.h"
 
-
 /**
  * Identifier of a running job. Returned when starting a job and used by other framework functions
  * (for example to get the state of a job).

@@ -14,59 +14,37 @@
 void *threadEntryPoint(void *context)
 {
     // Setup threadContext and jobContext
-    auto t_cxt = static_cast<ThreadContext*>(context);
-    ThreadContext& threadContext = *t_cxt; // TODO - consider using it as a pointer
-    JobContext& currJobContext = threadContext.getJobContext();
+    auto threadContext = static_cast<ThreadContext*>(context);
+    JobContext& currJobContext = threadContext->getJobContext();
 
     /** Map phase */
-    threadContext.invokeMapPhase();
+    threadContext->invokeMapPhase();
 
     /** Sort phase */
-    threadContext.invokeSortPhase();
+    threadContext->invokeSortPhase();
 
     /** Barrier - Let's wait here until all threads finish mapping and sorting */
     currJobContext.barrier();
 
     /** Shuffle phase */
-    if (threadContext.getThreadId() == 0)
-    {
-        threadContext.invokeShufflePhase();
-    }
+    threadContext->invokeShufflePhase(); // TODO ensure inside this method that only thread-0 will execute Shuffle
 
     /** Barrier -  Let all threads wait here until thread 0 finishes shuffling */
     currJobContext.barrier();
 
     /** Reduce phase */
-    threadContext.invokeReducePhase();
+    threadContext->invokeReducePhase();
 }
 
 JobHandle startMapReduceJob(const MapReduceClient &client, const InputVec &inputVec,
                   OutputVec &outputVec, int multiThreadLevel)
 {
-    auto job = new JobContext(client, inputVec, outputVec, multiThreadLevel); // TODO handle bad_alloc?
-
-    // TODO - move pthread management into ThreadContext
-    auto threadWorkers = job->getThreadWorkers(); // pthread_t vector - the actual threads
-    auto threadsContext = job->getThreadContexts();
-    for (int i = 0; i < multiThreadLevel - 1; i++)
-    {
-        if (pthread_create(&threadWorkers[i], nullptr, threadEntryPoint, (void*)&threadsContext[i]) != 0)
-        {
-            mapReduceLibraryError("[[pthread_create]] failed.");
-        }
-    }
-    return static_cast<void*>(job); // return jobHandler to client
+    auto job = new JobContext(client, inputVec, outputVec, multiThreadLevel, threadEntryPoint);
+    return static_cast<void*>(job); // return jobHandle to client
 }
 
 void waitForJob(JobHandle job)
 {
     auto jobContext = static_cast<JobContext*>(job);
-    // TODO - move pthread management into ThreadContext
-    for (size_t i = 0; i < jobContext->getNumOfThreads(); ++i)
-    {
-        if (pthread_join(jobContext->getThreadWorkers()[i], nullptr) != 0)
-        {
-            mapReduceLibraryError("[[pthread_join]] failed.");
-        }
-    }
+    jobContext->getJobDone();
 }

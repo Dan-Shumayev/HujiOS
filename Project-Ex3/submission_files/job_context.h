@@ -6,8 +6,8 @@
 #define EX3_JOB_CONTEXT_H
 
 #include "MapReduceFramework.h"
+#include "exceptions.h"
 #include "thread_context.h"
-#include <pthread.h> // pthread_t
 #include <vector> // std::vector
 #include "Barrier.h"
 #include <memory> // std::unique_ptr
@@ -17,6 +17,8 @@ class JobContext {
 private:
     /** Client's API */
     const MapReduceClient& client_; // client object's map and reduce routines
+    // it's a reference to `client` as it's an abstract type, and there is no rationale in copying
+    // such a type, but only referring to its origin
 
     /** Job-associated data */
     const InputVec inputVec_; // isn't supposed to be modified
@@ -29,26 +31,10 @@ private:
     std::atomic<size_t> lastThreadWorker_; // currently last assigned working thread
     Barrier threadsBarrier_; // used to synchronize all threads in between each phase
 public:
-    JobContext(const MapReduceClient& client, const InputVec& inputVec, OutputVec& outputVec, int numOfThreads)
-    : client_(client),
-      inputVec_(inputVec),
-      outputVec_(outputVec),
-      currJobState_({UNDEFINED_STAGE}),
-      numOfThreads_(numOfThreads),
-      threadContexts_(numOfThreads), // TODO is it necessary?
-      lastThreadWorker_(0),
-      threadsBarrier_(numOfThreads_)
-    {
-        for (size_t i = 0; i < numOfThreads_ - 1; ++i)
-        {
-            threadContexts_.emplace_back(i, *this); // construct each of them - ThreadContext ctor
-        }
-    }
+    JobContext(const MapReduceClient& client, const InputVec& inputVec, OutputVec& outputVec, int numOfThreads,
+               void *(*threadEntryPoint)(void *));
 
-//    std::vector<pthread_t>& getThreadWorkers() {return ;}; // TODO manage a data structure for the threadWorkers
-                                                                // TODO inside ThreadContext
-
-    std::vector<ThreadContext>& getThreadContexts() {return threadContexts_;};
+    std::vector<ThreadContext>& getThreadContexts() {return threadContexts_;}; // TODO returning by ref - good idea?
 
     size_t getNumOfThreads() const {return numOfThreads_;};
 
@@ -63,6 +49,8 @@ public:
     size_t lastThreadAtomicGetIncrement() {return lastThreadWorker_++;};
 
     void barrier() {threadsBarrier_.barrier();};
+
+    void getJobDone();
 };
 
 

@@ -2,8 +2,17 @@
 // Created by dan-os on 12/06/2021.
 //
 
-#include <algorithm>
 #include "thread_context.h"
+
+ThreadContext:ThreadContext(size_t tid, JobContext& jobContext)
+: pthread_thread_id_(tid),
+  currentJobContext_(jobContext)
+{
+    if (pthread_create(&pthreadThread_, nullptr, threadEntryPoint, static_cast<void*>(this)) != 0)
+    {
+        mapReduceLibraryError("[[pthread_create]] failed.");
+    }
+}
 
 void ThreadContext::invokeMapPhase()
 {
@@ -31,4 +40,12 @@ void ThreadContext::invokeShufflePhase()
 void ThreadContext::invokeReducePhase()
 {
     // TODO - implement logic
+}
+
+void ThreadContext::pthreadJoin()
+{
+    if (pthread_join(pthreadThread_, nullptr) != 0)
+    {
+        mapReduceLibraryError("[[pthread_join]] failed.");
+    }
 }
