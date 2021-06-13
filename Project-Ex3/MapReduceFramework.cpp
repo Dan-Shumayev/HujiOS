@@ -11,7 +11,7 @@
 #include <pthread.h>
 #include <algorithm>
 
-void threadEntryPoint(void *context)
+void *threadEntryPoint(void *context)
 {
     // Setup threadContext and jobContext
     auto t_cxt = static_cast<ThreadContext*>(context);
@@ -60,7 +60,7 @@ JobHandle startMapReduceJob(const MapReduceClient &client, const InputVec &input
 void waitForJob(JobHandle job)
 {
     auto jobContext = static_cast<JobContext*>(job);
-    for (int i = 0; i < jobContext->getNumOfThreads(); ++i)
+    for (size_t i = 0; i < jobContext->getNumOfThreads(); ++i)
     {
         if (pthread_join(jobContext->getThreadWorkers()[i], nullptr) != 0)
         {

@@ -12,17 +12,17 @@
 class ThreadContext {
 private:
     const size_t pthread_thread_id_;
-    JobContext* currentJobContext_; // It's a C-style pointer because some of the library
-    // function receive the job handle as a void*, resulting required static_cast from
+    JobContext& currentJobContext_; // It's a reference (and not a smart pointer) because some of the library
+    // functions receive the job handle as a void*, resulting required static_cast from
     // a smart pointer (we'd wish to define) into a void*. But, casting a smart pointer
     // defects its destruction.
     IntermediateVec intermediateVec_; // TODO - associated logic
 
 public:
-    ThreadContext(size_t tid, JobContext* jobContext)
+    ThreadContext(size_t tid, JobContext& jobContext)
     : pthread_thread_id_(tid), currentJobContext_(jobContext) {}
 
-    JobContext& getJobContext() {return *currentJobContext_;};
+    JobContext& getJobContext() {return currentJobContext_;};
 
     size_t getThreadId() const {return pthread_thread_id_;}; // TODO - Manage pthread data inside ThreadContext
 

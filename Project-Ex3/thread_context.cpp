@@ -7,7 +7,7 @@
 
 void ThreadContext::invokeMapPhase()
 {
-    JobContext& currJobContext = *currentJobContext_;
+    JobContext& currJobContext = currentJobContext_;
     size_t ix;
     while ((ix = currJobContext.lastThreadAtomicGetIncrement()) < currJobContext.getNumOfInputElems())
     {
