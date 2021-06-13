@@ -1,6 +1,6 @@
 #include "Barrier.h"
-#include <cstdlib>
-#include <cstdio>
+#include "exceptions.h"
+
 
 Barrier::Barrier(int numThreads)
 		: mutex(PTHREAD_MUTEX_INITIALIZER)
@@ -13,37 +13,31 @@ Barrier::Barrier(int numThreads)
 Barrier::~Barrier()
 {
 	if (pthread_mutex_destroy(&mutex) != 0) {
-		fprintf(stderr, "[[Barrier]] error on pthread_mutex_destroy");
-		exit(1);
-	}
+        systemError("[[Barrier]] error on pthread_mutex_destroy");
+    }
 	if (pthread_cond_destroy(&cv) != 0){
-		fprintf(stderr, "[[Barrier]] error on pthread_cond_destroy");
-		exit(1);
-	}
+        systemError("[[Barrier]] error on pthread_cond_destroy");
+    }
 }
 
 
 void Barrier::barrier()
 {
 	if (pthread_mutex_lock(&mutex) != 0){
-		fprintf(stderr, "[[Barrier]] error on pthread_mutex_lock");
-		exit(1);
-	}
+        systemError("[[Barrier]] error on pthread_mutex_lock");
+    }
 	// TODO - why do we actually need a condition variable here? What's the effect of that?
 	if (++count < numThreads) {
 		if (pthread_cond_wait(&cv, &mutex) != 0){
-			fprintf(stderr, "[[Barrier]] error on pthread_cond_wait");
-			exit(1);
-		}
+            systemError("[[Barrier]] error on pthread_cond_wait");
+        }
 	} else {
 		count = 0;
 		if (pthread_cond_broadcast(&cv) != 0) {
-			fprintf(stderr, "[[Barrier]] error on pthread_cond_broadcast");
-			exit(1);
-		}
+			systemError("[[Barrier]] error on pthread_cond_broadcast");
+        }
 	}
 	if (pthread_mutex_unlock(&mutex) != 0) {
-		fprintf(stderr, "[[Barrier]] error on pthread_mutex_unlock");
-		exit(1);
-	}
+        systemError("[[Barrier]] error on pthread_mutex_unlock");
+    }
 }

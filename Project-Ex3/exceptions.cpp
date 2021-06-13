@@ -6,14 +6,14 @@
 #include <cstring>
 #include "exceptions.h"
 
-void systemError(const char *msg)
+void systemError(const std::string& msg)
 {
     std::cerr << "system error: " << msg << ", errno - " << std::strerror(errno) << std::endl;
-    std::exit(1);
+    exit(1);
 }
 
-int threadLibraryError(const char *msg)
+int mapReduceLibraryError(const std::string& msg)
 {
     std::cerr << "MapReduce library error: " << msg << std::endl;
-    return -1;
+    return EXIT_FAIL;
 }

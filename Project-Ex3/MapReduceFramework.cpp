@@ -11,45 +11,33 @@
 #include <pthread.h>
 #include <algorithm>
 
-
-
-void mapPhase(JobContext &currJobContext, ThreadContext &threadContext) {
-    size_t ix;
-    while ((ix = currJobContext.lastThreadAtomicGetIncrement()) < currJobContext.getNumOfInputElems()) {
-        auto elem = currJobContext.getInputVector()[ix];
-        currJobContext.invokeClientMapRoutine(elem.first, elem.second, static_cast<void*>(&threadContext));
-    }
-    // TODO percentage, job state, etc. accordingly - to be continued...
-}
-
-void* threadEntryPoint(void *context)
+void threadEntryPoint(void *context)
 {
     // Setup threadContext and jobContext
     auto t_cxt = static_cast<ThreadContext*>(context);
-    ThreadContext& threadContext = *t_cxt;
+    ThreadContext& threadContext = *t_cxt; // TODO - consider using it as a pointer
     JobContext& currJobContext = threadContext.getJobContext();
 
     /** Map phase */
-    mapPhase(currJobContext, threadContext);
+    threadContext.invokeMapPhase();
 
     /** Sort phase */
-    // TODO - create this getter intermediate vector
-    std::sort(threadContext.getIntermediateVector().begin(), threadContext.getIntermediateVector().end());
-    // Let's wait here until all threads finish mapping and sorting
+    threadContext.invokeSortPhase();
+
+    /** Barrier - Let's wait here until all threads finish mapping and sorting */
     currJobContext.barrier();
 
     /** Shuffle phase */
     if (threadContext.getThreadId() == 0)
     {
-        shufflePhase(context); // TODO shuffling logic
+        threadContext.invokeShufflePhase();
     }
-    // Let all threads wait here until thread 0 finishes shuffling
+
+    /** Barrier -  Let all threads wait here until thread 0 finishes shuffling */
     currJobContext.barrier();
 
     /** Reduce phase */
-    reducePhase(context); // TODO reducePhase logic
-
-    return context; // TODO ensure it's valid
+    threadContext.invokeReducePhase();
 }
 
 JobHandle startMapReduceJob(const MapReduceClient &client, const InputVec &inputVec,

@@ -9,40 +9,46 @@
 #include "thread_context.h"
 #include <pthread.h> // pthread_t
 #include <vector> // std::vector
+#include "Barrier.h"
+#include <memory> // std::unique_ptr
 
 class JobContext {
 private:
-    const MapReduceClient& client_; // client object's map and reduce routines
-    const InputVec& inputVec_; // isn't supposed to be modified
-    OutputVec& outputVec_; // emit3's outputs
+    /** Client's API */
+    const MapReduceClient client_; // client object's map and reduce routines
+
+    /** Job-associated data */
+    const InputVec inputVec_; // isn't supposed to be modified
+    OutputVec outputVec_; // emit3's outputs
     JobState currJobState_;
 
     /** Thread-management */
-    std::vector<pthread_t> threadWorkers_; // the actual threads in charge of doing the job
-    std::vector<ThreadContext> threadContexts_; // working threads' context on the job
-    std::atomic<size_t> lastThreadWorker_; // the last assigned working thread
-    std::unique_ptr<Barrier> threadsBarrier_; // it's used to synchronize all threads in between each phase
+    std::vector<std::unique_ptr<ThreadContext>> threadContexts_; // working threads' context
+    size_t numOfThreads_; // amount of working threads
+    std::atomic<size_t> lastThreadWorker_; // currently last assigned working thread
+    Barrier threadsBarrier_; // used to synchronize all threads in between each phase
 public:
     JobContext(const MapReduceClient& client, const InputVec& inputVec, OutputVec& outputVec, int numOfThreads)
     : client_(client),
       currJobState_({UNDEFINED_STAGE}),
+      numOfThreads_(numOfThreads),
       inputVec_(inputVec),
       outputVec_(outputVec),
-      threadWorkers_(numOfThreads),
       threadsBarrier_(numOfThreads),
       lastThreadWorker_(0)
     {
-        for (size_t i = 0; i < numOfThreads; ++i)
+        threadContexts_ = new ThreadContext[numOfThreads_]; // allocate numOfThread unique_ptr's
+        for (size_t i = 0; i < numOfThreads_; ++i)
         {
-            threadContexts_[i] = new ThreadContext(i, &this);
+            threadContexts_[i](i, this); // construct each of them - ThreadContext ctor
         }
     }
 
-    std::vector<pthread_t>& getThreadWorkers() {return threadWorkers_;};
+    std::vector<pthread_t>& getThreadWorkers() {return ;}; // TODO build a data structure for the threadWorkers
 
     std::vector<ThreadContext>& getThreadContexts() {return threadContexts_;};
 
-    size_t getNumOfThreads() {return threadWorkers_.size();};
+    size_t getNumOfThreads() const {return numOfThreads_;};
 
     const InputVec &getInputVector() const {return inputVec_;};
 
@@ -50,9 +56,11 @@ public:
 
     void invokeClientMapRoutine(const K1* key, const V1* value, void* context) {client_.map(key, value, context);};
 
-    std::atomic<size_t> lastThreadAtomicGetIncrement() {return lastThreadWorker_++;};
+    void invokeReduceMapRoutine(const IntermediateVec* pairs, void* context) {client_.reduce(pairs, context);};
 
-    void barrier() {threadsBarrier_->barrier;};
+    size_t lastThreadAtomicGetIncrement() {return lastThreadWorker_++;};
+
+    void barrier() {threadsBarrier_.barrier();};
 };
 
 
