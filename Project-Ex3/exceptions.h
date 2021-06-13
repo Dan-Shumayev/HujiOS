@@ -10,9 +10,11 @@ const int EXIT_FAIL = -1;
 
 /**
  * Display a system call error and exit the program
+ * Note that noreturn directive makes the program not to return from systemError invocation
+ * but terminating upon its execution
  * @param msg Detailed error information
  */
-void systemError(const std::string& msg);
+[[ noreturn ]] void systemError(const std::string& msg);
 
 /**
  * Displays a thread library error and returns -1
