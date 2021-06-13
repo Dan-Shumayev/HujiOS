@@ -45,6 +45,7 @@ JobHandle startMapReduceJob(const MapReduceClient &client, const InputVec &input
 {
     auto job = new JobContext(client, inputVec, outputVec, multiThreadLevel); // TODO handle bad_alloc?
 
+    // TODO - move pthread management into ThreadContext
     auto threadWorkers = job->getThreadWorkers(); // pthread_t vector - the actual threads
     auto threadsContext = job->getThreadContexts();
     for (int i = 0; i < multiThreadLevel - 1; i++)
@@ -60,6 +61,7 @@ JobHandle startMapReduceJob(const MapReduceClient &client, const InputVec &input
 void waitForJob(JobHandle job)
 {
     auto jobContext = static_cast<JobContext*>(job);
+    // TODO - move pthread management into ThreadContext
     for (size_t i = 0; i < jobContext->getNumOfThreads(); ++i)
     {
         if (pthread_join(jobContext->getThreadWorkers()[i], nullptr) != 0)

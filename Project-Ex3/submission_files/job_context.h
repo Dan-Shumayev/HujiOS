@@ -35,7 +35,7 @@ public:
       outputVec_(outputVec),
       currJobState_({UNDEFINED_STAGE}),
       numOfThreads_(numOfThreads),
-      threadContexts_(numOfThreads),
+      threadContexts_(numOfThreads), // TODO is it necessary?
       lastThreadWorker_(0),
       threadsBarrier_(numOfThreads_)
     {
