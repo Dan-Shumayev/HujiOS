@@ -1,0 +1,21 @@
+In file included from job_context.h:10,
+                 from MapReduceFramework.cpp:7:
+thread_context.h:19:5: error: ‘JobContext’ does not name a type
+   19 |     JobContext& currentJobContext_; // It's a reference (and not a smart pointer) because some of the library
+      |     ^~~~~~~~~~
+thread_context.h:26:31: error: ‘JobContext’ has not been declared
+   26 |     ThreadContext(size_t tid, JobContext& jobContext, void *(*threadEntryPoint)(void *));
+      |                               ^~~~~~~~~~
+thread_context.h:29:5: error: ‘JobContext’ does not name a type
+   29 |     JobContext& getJobContext() {return currentJobContext_;};
+      |     ^~~~~~~~~~
+In file included from MapReduceFramework.cpp:7:
+job_context.h: In member function ‘std::vector<ThreadContext>& JobContext::getThreadContexts()’:
+job_context.h:37:61: error: invalid initialization of reference of type ‘std::vector<ThreadContext>&’ from expression of type ‘std::vector<std::unique_ptr<ThreadContext> >’
+   37 |     std::vector<ThreadContext>& getThreadContexts() {return threadContexts_;}; // TODO returning by ref - good idea?
+      |                                                             ^~~~~~~~~~~~~~~
+MapReduceFramework.cpp: In function ‘void* threadEntryPoint(void*)’:
+MapReduceFramework.cpp:18:49: error: ‘class ThreadContext’ has no member named ‘getJobContext’
+   18 |     JobContext& currJobContext = threadContext->getJobContext();
+      |                                                 ^~~~~~~~~~~~~
+make: *** [<builtin>: MapReduceFramework.o] Error 1
