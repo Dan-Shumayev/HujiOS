@@ -7,10 +7,10 @@
 
 
 #include <cstddef> // size_t
-#include "job_context.h" // JobContext
 #include <pthread.h> // pthread_t
 #include <algorithm>
 
+class JobContext; // forward-declaration to break the include-cycle
 
 class ThreadContext {
 private:

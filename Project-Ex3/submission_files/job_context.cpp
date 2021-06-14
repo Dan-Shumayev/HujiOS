@@ -26,6 +26,6 @@ void JobContext::getJobDone()
 {
     for (size_t i = 0; i < numOfThreads_ - 1; ++i)
     {
-        threadContexts_.pthreadJoin();
+        threadContexts_[i]->pthreadJoin();
     }
 }

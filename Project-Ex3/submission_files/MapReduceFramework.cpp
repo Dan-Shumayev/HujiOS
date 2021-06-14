@@ -2,13 +2,9 @@
 // Created by dan-os on 09/06/2021.
 //
 
-#include "MapReduceFramework.h"
-#include "Barrier.h"
-#include "job_context.h"
-#include "thread_context.h"
-#include "exceptions.h"
-
-#include <pthread.h>
+#include "job_context.h" // MapReduceFrameworkJobContext, exceptions, ThreadContext,
+                            // barrier
+#include <pthread.h> // pthread_t, pthread_create, pthread_join
 #include <algorithm>
 
 void *threadEntryPoint(void *context)
@@ -35,7 +31,7 @@ void *threadEntryPoint(void *context)
     /** Reduce phase */
     threadContext->invokeReducePhase();
 
-    return nullptr; // we must (as per-pthread_create) return something as we promise returning void-pointer, hence null
+    return nullptr; // we must(as per-pthread_create) return something as we promise returning void-pointer, hence null
 }
 
 JobHandle startMapReduceJob(const MapReduceClient &client, const InputVec &inputVec,

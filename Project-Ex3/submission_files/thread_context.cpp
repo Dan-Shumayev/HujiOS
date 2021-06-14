@@ -14,12 +14,21 @@ ThreadContext:ThreadContext(size_t tid, JobContext& jobContext)
     }
 }
 
+void ThreadContext::pthreadJoin()
+{
+    if (pthread_join(pthreadThread_, nullptr) != 0)
+    {
+        mapReduceLibraryError("[[pthread_join]] failed.");
+    }
+}
+
 void ThreadContext::invokeMapPhase()
 {
     JobContext& currJobContext = currentJobContext_;
     size_t ix;
     while ((ix = currJobContext.lastThreadAtomicGetIncrement()) < currJobContext.getNumOfInputElems())
     {
+        // distributing input elements among the thread workers
         auto elem = currJobContext.getInputVector()[ix];
         currJobContext.invokeClientMapRoutine(elem.first, elem.second, static_cast<void *>(this));
     }
@@ -40,12 +49,4 @@ void ThreadContext::invokeShufflePhase()
 void ThreadContext::invokeReducePhase()
 {
     // TODO - implement logic
-}
-
-void ThreadContext::pthreadJoin()
-{
-    if (pthread_join(pthreadThread_, nullptr) != 0)
-    {
-        mapReduceLibraryError("[[pthread_join]] failed.");
-    }
 }

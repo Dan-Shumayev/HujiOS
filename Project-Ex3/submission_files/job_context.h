@@ -5,13 +5,14 @@
 #ifndef EX3_JOB_CONTEXT_H
 #define EX3_JOB_CONTEXT_H
 
-#include "MapReduceFramework.h"
-#include "exceptions.h"
-#include "thread_context.h"
+#include "MapReduceFramework.h" // MapReduce library API
+#include "exceptions.h" // systemError, mapReduceLibraryError
 #include <vector> // std::vector
-#include "Barrier.h"
+#include "Barrier.h" // barrier
 #include <memory> // std::unique_ptr
 #include <atomic> // std::atomic
+#include "thread_context.h"
+
 
 class JobContext {
 private:
@@ -34,7 +35,8 @@ public:
     JobContext(const MapReduceClient& client, const InputVec& inputVec, OutputVec& outputVec, int numOfThreads,
                void *(*threadEntryPoint)(void *));
 
-    std::vector<ThreadContext>& getThreadContexts() {return threadContexts_;}; // TODO returning by ref - good idea?
+    // TODO returning by ref - good idea?
+    std::vector<std::unique_ptr<ThreadContext>>& getThreadContexts() {return threadContexts_;};
 
     size_t getNumOfThreads() const {return numOfThreads_;};
 

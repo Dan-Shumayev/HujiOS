@@ -5,8 +5,11 @@
 #ifndef EX3_EXCEPTIONS_H
 #define EX3_EXCEPTIONS_H
 
+#include <iostream>
+#include <cstring>
+
+
 const int EXIT_FAIL = -1;
-#include <string>
 
 /**
  * Display a system call error and exit the program

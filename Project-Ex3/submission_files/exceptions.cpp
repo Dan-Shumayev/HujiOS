@@ -2,8 +2,6 @@
 // Created by dan-os on 12/06/2021.
 //
 
-#include <iostream>
-#include <cstring>
 #include "exceptions.h"
 
 void systemError(const std::string& msg)
