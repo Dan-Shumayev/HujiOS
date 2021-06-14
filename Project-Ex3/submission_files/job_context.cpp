@@ -4,8 +4,7 @@
 
 #include "job_context.h"
 
-JobContext::JobContext(const MapReduceClient &client, const InputVec &inputVec, OutputVec &outputVec, int numOfThreads,
-                       void *(*threadEntryPoint)(void *))
+JobContext::JobContext(const MapReduceClient &client, const InputVec &inputVec, OutputVec &outputVec, int numOfThreads)
 : client_(client),
   inputVec_(inputVec),
   outputVec_(outputVec),
@@ -18,7 +17,7 @@ JobContext::JobContext(const MapReduceClient &client, const InputVec &inputVec, 
   for (size_t i = 0; i < numOfThreads_ - 1; ++i)
   {
       // construct each of them - ThreadContext ctor is implicitly called here
-      threadContexts_.emplace_back(i, *this, threadEntryPoint);
+      threadContexts_.emplace_back(i, *this);
   }
 }
 

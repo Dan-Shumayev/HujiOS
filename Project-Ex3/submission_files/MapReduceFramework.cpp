@@ -4,40 +4,12 @@
 
 #include "job_context.h" // MapReduceFrameworkJobContext, exceptions, ThreadContext,
                             // barrier
-#include <pthread.h> // pthread_t, pthread_create, pthread_join
 #include <algorithm>
-
-void *threadEntryPoint(void *context)
-{
-    // Setup threadContext and jobContext
-    auto threadContext = static_cast<ThreadContext*>(context);
-    JobContext& currJobContext = threadContext->getJobContext();
-
-    /** Map phase */
-    threadContext->invokeMapPhase();
-
-    /** Sort phase */
-    threadContext->invokeSortPhase();
-
-    /** Barrier - Let's wait here until all threads finish mapping and sorting */
-    currJobContext.barrier();
-
-    /** Shuffle phase */
-    threadContext->invokeShufflePhase(); // TODO ensure inside this method that only thread-0 will execute Shuffle
-
-    /** Barrier -  Let all threads wait here until thread 0 finishes shuffling */
-    currJobContext.barrier();
-
-    /** Reduce phase */
-    threadContext->invokeReducePhase();
-
-    return nullptr; // we must(as per-pthread_create) return something as we promise returning void-pointer, hence null
-}
 
 JobHandle startMapReduceJob(const MapReduceClient &client, const InputVec &inputVec,
                   OutputVec &outputVec, int multiThreadLevel)
 {
-    auto job = new JobContext(client, inputVec, outputVec, multiThreadLevel, threadEntryPoint);
+    auto job = new JobContext(client, inputVec, outputVec, multiThreadLevel);
     return static_cast<void*>(job); // return jobHandle to client
 }
 

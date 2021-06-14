@@ -22,7 +22,7 @@ private:
     // such a type, but only referring to its origin
 
     /** Job-associated data */
-    const InputVec inputVec_; // isn't supposed to be modified
+    const InputVec& inputVec_; // isn't supposed to be modified
     OutputVec outputVec_; // emit3's outputs
     JobState currJobState_;
 
@@ -32,8 +32,7 @@ private:
     std::atomic<size_t> lastThreadWorker_; // currently last assigned working thread
     Barrier threadsBarrier_; // used to synchronize all threads in between each phase
 public:
-    JobContext(const MapReduceClient& client, const InputVec& inputVec, OutputVec& outputVec, int numOfThreads,
-               void *(*threadEntryPoint)(void *));
+    JobContext(const MapReduceClient& client, const InputVec& inputVec, OutputVec& outputVec, int numOfThreads);
 
     // TODO returning by ref - good idea?
     std::vector<std::unique_ptr<ThreadContext>>& getThreadContexts() {return threadContexts_;};

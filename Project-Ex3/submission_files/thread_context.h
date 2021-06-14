@@ -9,12 +9,15 @@
 #include <cstddef> // size_t
 #include <pthread.h> // pthread_t
 #include <algorithm>
+#include "exceptions.h"
+#include "MapReduceClient.h"
 
-class JobContext; // forward-declaration to break the include-cycle
+/** forward-declaration to break the include-cycle */
+class JobContext;
 
 class ThreadContext {
 private:
-    const size_t pthread_thread_id_;
+    const size_t thread_id_;
     pthread_t pthreadThread_; // the actual thread worker from pthread library
     JobContext& currentJobContext_; // It's a reference (and not a smart pointer) because some of the library
     // functions receive the job handle as a void*, resulting required static_cast from
@@ -23,7 +26,9 @@ private:
     IntermediateVec intermediateVec_; // TODO - associated logic
 
 public:
-    ThreadContext(size_t tid, JobContext& jobContext, void *(*threadEntryPoint)(void *));
+    ThreadContext(size_t tid, JobContext& jobContext);
+
+    static void *_threadEntryPoint(void *context);
 
     // TODO is it reasonable to return a private member by ref?
     JobContext& getJobContext() {return currentJobContext_;};
