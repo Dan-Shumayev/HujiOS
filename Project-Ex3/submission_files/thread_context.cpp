@@ -81,3 +81,13 @@ void ThreadContext::invokeReducePhase()
 {
     // TODO - implement logic
 }
+
+void ThreadContext::pushIntermediateElem(IntermediatePair&& intermediatePair)
+{
+    intermediateVec_.emplace_back(std::move(intermediatePair)); // TODO - right use of std::move and rvalue?
+}
+
+void ThreadContext::pushOutputElem(OutputPair &&outputPair)
+{
+    currentJobContext_.updateOutputVector(std::move(outputPair)); // TODO - right use of std::move and rvalue?
+}

@@ -46,3 +46,8 @@ void JobContext::unlockMutex()
         systemError("[[pthread_mutex_unlock]] failed.");
     }
 }
+
+void JobContext::updateOutputVector(OutputPair &&outputPair)
+{
+    outputVec_.emplace_back(outputPair);
+}

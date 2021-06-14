@@ -27,3 +27,18 @@ void getJobState(JobHandle job, JobState *state)
 
     jobContext->unlockMutex();
 }
+
+void emit2(K2 *key, V2 *value, void *context)
+{
+    auto threadContext = static_cast<ThreadContext*>(context);
+    // TODO - do we need some mutex-locking here? "the function updates the number of intermediary elements using
+    //  atomic counter" - what do they mean by that? which counter?
+    threadContext->pushIntermediateElem(IntermediatePair(key, value));
+}
+
+void emit3(K3* key, V3* value, void* context)
+{
+    auto threadContext = static_cast<ThreadContext*>(context);
+    // TODO - same to-do as in emit2
+    threadContext->pushOutputElem(OutputPair(key, value));
+}

@@ -42,6 +42,10 @@ public:
     void invokeReducePhase();
 
     void pthreadJoin();
+
+    void pushIntermediateElem(IntermediatePair&& intermediatePair);
+
+    void pushOutputElem(OutputPair&& outputPair);
 };
 
 

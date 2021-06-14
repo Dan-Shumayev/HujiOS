@@ -59,6 +59,8 @@ public:
     void lockMutex();
 
     void unlockMutex();
+
+    void updateOutputVector(OutputPair &&outputPair); // TODO - right use of rvalue reference?
 };
 
 
