@@ -31,6 +31,7 @@ private:
     std::vector<std::unique_ptr<ThreadContext>> threadContexts_; // working threads' context
     std::atomic<size_t> lastThreadWorker_; // currently last assigned working thread
     Barrier threadsBarrier_; // used to synchronize all threads in between each phase
+    pthread_mutex_t pthreadMutex_;// TODO - maybe replace it with special class managing the mutex? Not sure if it's possible
 public:
     JobContext(const MapReduceClient& client, const InputVec& inputVec, OutputVec& outputVec, int numOfThreads);
 
@@ -52,6 +53,12 @@ public:
     void barrier() {threadsBarrier_.barrier();};
 
     void getJobDone();
+
+    JobState getJobState() const {return currJobState_;};
+
+    void lockMutex();
+
+    void unlockMutex();
 };
 
 

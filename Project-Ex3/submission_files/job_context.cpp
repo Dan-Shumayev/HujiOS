@@ -12,7 +12,8 @@ JobContext::JobContext(const MapReduceClient &client, const InputVec &inputVec, 
   numOfThreads_(numOfThreads),
   threadContexts_(numOfThreads), // TODO is it necessary?
   lastThreadWorker_(0),
-  threadsBarrier_(numOfThreads_)
+  threadsBarrier_(numOfThreads_),
+  pthreadMutex_(PTHREAD_MUTEX_INITIALIZER)
 {
   for (size_t i = 0; i < numOfThreads_ - 1; ++i)
   {
@@ -27,5 +28,21 @@ void JobContext::getJobDone()
     for (size_t i = 0; i < numOfThreads_ - 1; ++i)
     {
         threadContexts_[i]->pthreadJoin();
+    }
+}
+
+void JobContext::lockMutex()
+{
+    if (pthread_mutex_lock(&pthreadMutex_))
+    {
+        systemError("[[pthread_mutex_lock]] failed.");
+    }
+}
+
+void JobContext::unlockMutex()
+{
+    if (pthread_mutex_unlock(&pthreadMutex_))
+    {
+        systemError("[[pthread_mutex_unlock]] failed.");
     }
 }

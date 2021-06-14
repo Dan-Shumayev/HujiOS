@@ -23,7 +23,7 @@ private:
     // functions receive the job handle as a void*, resulting required static_cast from
     // a smart pointer (we'd wish to define) into a void*. But, casting a smart pointer
     // defects its destruction.
-    IntermediateVec intermediateVec_; // TODO - associated logic
+    IntermediateVec intermediateVec_;
 
 public:
     ThreadContext(size_t tid, JobContext& jobContext);

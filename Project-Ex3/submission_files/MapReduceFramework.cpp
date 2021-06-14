@@ -17,3 +17,13 @@ void waitForJob(JobHandle job)
     auto jobContext = static_cast<JobContext*>(job);
     jobContext->getJobDone();
 }
+
+void getJobState(JobHandle job, JobState *state)
+{
+    auto jobContext = static_cast<JobContext *>(job);
+    jobContext->lockMutex();
+
+    *state = jobContext->getJobState();// TODO - valid and efficient struct copy-assignment?
+
+    jobContext->unlockMutex();
+}

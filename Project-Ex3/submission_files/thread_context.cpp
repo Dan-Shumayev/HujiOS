@@ -11,7 +11,7 @@ ThreadContext::ThreadContext(size_t tid, JobContext& jobContext)
   pthreadThread_(),
   currentJobContext_(jobContext)
 {
-    if (pthread_create(&pthreadThread_, nullptr, _threadEntryPoint, static_cast<void *>(this)) != 0)
+    if (pthread_create(&pthreadThread_, nullptr, _threadEntryPoint, static_cast<void *>(this)))
     {
         systemError("[[pthread_create]] failed.");
     }
@@ -46,7 +46,7 @@ void *ThreadContext::_threadEntryPoint(void *context)
 
 void ThreadContext::pthreadJoin()
 {
-    if (pthread_join(pthreadThread_, nullptr) != 0) // TODO - pthread_join affects the thread's state?
+    if (pthread_join(pthreadThread_, nullptr)) // TODO - pthread_join affects the thread's state?
                                                                     //TODO if not, make this method const
     {
         systemError("[[pthread_join]] failed.");
@@ -69,7 +69,7 @@ void ThreadContext::invokeMapPhase()
 void ThreadContext::invokeSortPhase()
 {
     std::sort(intermediateVec_.begin(), intermediateVec_.end());
-    // TODO - ensure we don't need nothing else here
+    // TODO - ensure we don't need anything else here
 }
 
 void ThreadContext::invokeShufflePhase()
