@@ -16,8 +16,8 @@ JobContext::JobContext(const MapReduceClient &client, const InputVec &inputVec, 
 {
   for (size_t i = 0; i < numOfThreads_ - 1; ++i)
   {
-      // construct each of them - ThreadContext ctor is implicitly called here
-      threadContexts_.emplace_back(i, *this);
+      // construct each of them
+      threadContexts_.emplace_back(new ThreadContext(i, *this));
   }
 }
 

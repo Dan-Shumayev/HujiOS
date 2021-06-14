@@ -4,6 +4,8 @@
 
 #include "thread_context.h"
 
+#include "job_context.h"
+
 ThreadContext::ThreadContext(size_t tid, JobContext& jobContext)
 : thread_id_(tid),
   pthreadThread_(),
