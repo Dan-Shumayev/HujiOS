@@ -9,7 +9,7 @@ JobHandle startMapReduceJob(const MapReduceClient &client, const InputVec &input
                   OutputVec &outputVec, int multiThreadLevel)
 {
     auto job = new JobContext(client, inputVec, outputVec, multiThreadLevel);
-    return static_cast<void*>(job); // return jobHandle to client
+    return static_cast<JobHandle>(job); // return jobHandle to client
 }
 
 void waitForJob(JobHandle job)

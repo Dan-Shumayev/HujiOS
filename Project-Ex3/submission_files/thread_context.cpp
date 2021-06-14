@@ -13,7 +13,7 @@ ThreadContext::ThreadContext(size_t tid, JobContext& jobContext)
 {
     if (pthread_create(&pthreadThread_, nullptr, _threadEntryPoint, static_cast<void *>(this)) != 0)
     {
-        mapReduceLibraryError("[[pthread_create]] failed.");
+        systemError("[[pthread_create]] failed.");
     }
 }
 
@@ -49,7 +49,7 @@ void ThreadContext::pthreadJoin()
     if (pthread_join(pthreadThread_, nullptr) != 0) // TODO - pthread_join affects the thread's state?
                                                                     //TODO if not, make this method const
     {
-        mapReduceLibraryError("[[pthread_join]] failed.");
+        systemError("[[pthread_join]] failed.");
     }
 }
 
