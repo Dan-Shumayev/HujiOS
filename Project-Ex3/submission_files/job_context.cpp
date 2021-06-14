@@ -13,7 +13,8 @@ JobContext::JobContext(const MapReduceClient &client, const InputVec &inputVec, 
   threadContexts_(numOfThreads), // TODO is it necessary?
   lastThreadWorker_(0),
   threadsBarrier_(numOfThreads_),
-  pthreadMutex_(PTHREAD_MUTEX_INITIALIZER)
+  jobStateMutex_(PTHREAD_MUTEX_INITIALIZER),
+  outputVecMutex_(PTHREAD_MUTEX_INITIALIZER)
 {
   for (size_t i = 0; i < numOfThreads_ - 1; ++i)
   {
@@ -31,17 +32,33 @@ void JobContext::getJobDone()
     }
 }
 
-void JobContext::lockMutex()
+void JobContext::lockJobStateMutex()
 {
-    if (pthread_mutex_lock(&pthreadMutex_))
+    if (pthread_mutex_lock(&jobStateMutex_))
     {
         systemError("[[pthread_mutex_lock]] failed.");
     }
 }
 
-void JobContext::unlockMutex()
+void JobContext::unlockJobStateMutex()
 {
-    if (pthread_mutex_unlock(&pthreadMutex_))
+    if (pthread_mutex_unlock(&jobStateMutex_))
+    {
+        systemError("[[pthread_mutex_unlock]] failed.");
+    }
+}
+
+void JobContext::lockOutputVecMutex()
+{
+    if (pthread_mutex_lock(&outputVecMutex_))
+    {
+        systemError("[[pthread_mutex_lock]] failed.");
+    }
+}
+
+void JobContext::unlockOutputVecMutex()
+{
+    if (pthread_mutex_unlock(&outputVecMutex_))
     {
         systemError("[[pthread_mutex_unlock]] failed.");
     }
@@ -49,5 +66,8 @@ void JobContext::unlockMutex()
 
 void JobContext::updateOutputVector(OutputPair &&outputPair)
 {
+    // anyone of the threads may try updating this output vector, hence we have to make this update a critical section
+    lockOutputVecMutex();
     outputVec_.emplace_back(outputPair);
+    unlockOutputVecMutex();
 }

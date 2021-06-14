@@ -8,7 +8,7 @@
 
 #include <cstddef> // size_t
 #include <pthread.h> // pthread_t
-#include <algorithm>
+#include <algorithm> // std::sort
 #include "exceptions.h"
 #include "MapReduceClient.h"
 

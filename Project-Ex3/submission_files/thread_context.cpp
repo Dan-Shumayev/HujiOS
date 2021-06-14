@@ -68,8 +68,7 @@ void ThreadContext::invokeMapPhase()
 
 void ThreadContext::invokeSortPhase()
 {
-    std::sort(intermediateVec_.begin(), intermediateVec_.end());
-    // TODO - ensure we don't need anything else here
+    std::sort(intermediateVec_.begin(), intermediateVec_.end()); // Elements are compared using operator<
 }
 
 void ThreadContext::invokeShufflePhase()
@@ -84,10 +83,10 @@ void ThreadContext::invokeReducePhase()
 
 void ThreadContext::pushIntermediateElem(IntermediatePair&& intermediatePair)
 {
-    intermediateVec_.emplace_back(std::move(intermediatePair)); // TODO - right use of std::move and rvalue?
+    intermediateVec_.emplace_back(intermediatePair);
 }
 
 void ThreadContext::pushOutputElem(OutputPair &&outputPair)
 {
-    currentJobContext_.updateOutputVector(std::move(outputPair)); // TODO - right use of std::move and rvalue?
+    currentJobContext_.updateOutputVector(std::forward<OutputPair>(outputPair));
 }

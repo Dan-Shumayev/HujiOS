@@ -21,11 +21,11 @@ void waitForJob(JobHandle job)
 void getJobState(JobHandle job, JobState *state)
 {
     auto jobContext = static_cast<JobContext *>(job);
-    jobContext->lockMutex();
+    jobContext->lockJobStateMutex();
 
     *state = jobContext->getJobState();// TODO - valid and efficient struct copy-assignment?
 
-    jobContext->unlockMutex();
+    jobContext->unlockJobStateMutex();
 }
 
 void emit2(K2 *key, V2 *value, void *context)
@@ -39,6 +39,5 @@ void emit2(K2 *key, V2 *value, void *context)
 void emit3(K3* key, V3* value, void* context)
 {
     auto threadContext = static_cast<ThreadContext*>(context);
-    // TODO - same to-do as in emit2
     threadContext->pushOutputElem(OutputPair(key, value));
 }

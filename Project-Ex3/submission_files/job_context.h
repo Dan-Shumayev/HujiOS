@@ -31,7 +31,8 @@ private:
     std::vector<std::unique_ptr<ThreadContext>> threadContexts_; // working threads' context
     std::atomic<size_t> lastThreadWorker_; // currently last assigned working thread
     Barrier threadsBarrier_; // used to synchronize all threads in between each phase
-    pthread_mutex_t pthreadMutex_;// TODO - maybe replace it with special class managing the mutex? Not sure if it's possible
+    pthread_mutex_t jobStateMutex_;// TODO - maybe replace it with special class managing the mutex? Not sure if it's possible
+    pthread_mutex_t outputVecMutex_;
 public:
     JobContext(const MapReduceClient& client, const InputVec& inputVec, OutputVec& outputVec, int numOfThreads);
 
@@ -56,11 +57,15 @@ public:
 
     JobState getJobState() const {return currJobState_;};
 
-    void lockMutex();
+    void lockJobStateMutex();
 
-    void unlockMutex();
+    void unlockJobStateMutex();
 
-    void updateOutputVector(OutputPair &&outputPair); // TODO - right use of rvalue reference?
+    void lockOutputVecMutex();
+
+    void unlockOutputVecMutex();
+
+    void updateOutputVector(OutputPair &&outputPair);
 };
 
 
