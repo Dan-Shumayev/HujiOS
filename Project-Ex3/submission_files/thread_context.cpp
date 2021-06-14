@@ -2,6 +2,7 @@
 // Created by dan-os on 12/06/2021.
 //
 
+#include <unistd.h>
 #include "thread_context.h"
 #include "job_context.h"
 
@@ -33,7 +34,7 @@ void *ThreadContext::_threadEntryPoint(void *context)
     currJobContext.barrier();
 
     /** Shuffle phase */
-    threadContext->invokeShufflePhase(); // TODO ensure inside this method that only thread-0 will execute Shuffle
+    threadContext->invokeShufflePhase();
 
     /** Barrier -  Let all threads wait here until thread 0 finishes shuffling */
     currJobContext.barrier();
@@ -46,8 +47,7 @@ void *ThreadContext::_threadEntryPoint(void *context)
 
 void ThreadContext::pthreadJoin()
 {
-    if (pthread_join(pthreadThread_, nullptr)) // TODO - pthread_join affects the thread's state?
-                                                                    //TODO if not, make this method const
+    if (pthread_join(pthreadThread_, nullptr))
     {
         systemError("[[pthread_join]] failed.");
     }
@@ -73,7 +73,15 @@ void ThreadContext::invokeSortPhase()
 
 void ThreadContext::invokeShufflePhase()
 {
-    // TODO - implement logic
+    if (thread_id_ == 0) // by convention - only thread-0 performs the shuffle phase
+    {
+
+    }
+    else
+    {
+        // if you're not thread-0 => get some sleep letting him finish shuffling
+        sleep(1);
+    }
 }
 
 void ThreadContext::invokeReducePhase()

@@ -23,6 +23,14 @@ JobContext::JobContext(const MapReduceClient &client, const InputVec &inputVec, 
   }
 }
 
+JobContext::~JobContext()
+{
+    if (pthread_mutex_destroy(&jobStateMutex_) || pthread_mutex_destroy(&outputVecMutex_))
+    {
+        systemError("[[pthread_mutex_destroy]] failed.");
+    }
+}
+
 void JobContext::getJobDone()
 {
     // TODO - It is legal to call the function more than once and we should handle it

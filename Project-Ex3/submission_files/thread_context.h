@@ -30,7 +30,6 @@ public:
 
     static void *_threadEntryPoint(void *context);
 
-    // TODO is it reasonable to return a private member by ref?
     JobContext& getJobContext() {return currentJobContext_;};
 
     void invokeMapPhase();

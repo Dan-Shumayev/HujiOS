@@ -31,12 +31,13 @@ private:
     std::vector<std::unique_ptr<ThreadContext>> threadContexts_; // working threads' context
     std::atomic<size_t> lastThreadWorker_; // currently last assigned working thread
     Barrier threadsBarrier_; // used to synchronize all threads in between each phase
-    pthread_mutex_t jobStateMutex_;// TODO - maybe replace it with special class managing the mutex? Not sure if it's possible
+    pthread_mutex_t jobStateMutex_;
     pthread_mutex_t outputVecMutex_;
 public:
     JobContext(const MapReduceClient& client, const InputVec& inputVec, OutputVec& outputVec, int numOfThreads);
 
-    // TODO returning by ref - good idea?
+    ~JobContext();
+
     std::vector<std::unique_ptr<ThreadContext>>& getThreadContexts() {return threadContexts_;};
 
     size_t getNumOfThreads() const {return numOfThreads_;};
@@ -47,7 +48,7 @@ public:
 
     void invokeClientMapRoutine(const K1* key, const V1* value, void* context) {client_.map(key, value, context);};
 
-    void invokeReduceMapRoutine(const IntermediateVec* pairs, void* context) {client_.reduce(pairs, context);};
+    void invokeClientReduceRoutine(const IntermediateVec* pairs, void* context) {client_.reduce(pairs, context);};
 
     size_t lastThreadAtomicGetIncrement() {return lastThreadWorker_++;};
 
