@@ -17,12 +17,13 @@ JobContext::JobContext(const MapReduceClient &client, const InputVec &inputVec, 
   for (size_t i = 0; i < numOfThreads_ - 1; ++i)
   {
       // construct each of them - ThreadContext ctor is implicitly called here
-      threadContexts_.emplace_back(i, *this);
+      threadContexts_.emplace_back(new ThreadContext(i, *this));
   }
 }
 
 void JobContext::getJobDone()
 {
+    // TODO - It is legal to call the function more than once and we should handle it
     for (size_t i = 0; i < numOfThreads_ - 1; ++i)
     {
         threadContexts_[i]->pthreadJoin();

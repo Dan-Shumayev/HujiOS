@@ -71,9 +71,6 @@ JobHandle startMapReduceJob(const MapReduceClient& client,
 /**
  * – a function gets JobHandle returned by startMapReduceFramework and waits until it is finished.
  *  you should use the c function pthread_join.
-    TODO Hint - It is legal to call the function more than once and you should handle it. Pay attention that
-        calling pthread_join twice from the same process has undefined behavior and you must
-        avoid that.
  * @param job
  */
 void waitForJob(JobHandle job);
