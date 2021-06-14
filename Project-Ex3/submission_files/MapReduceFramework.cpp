@@ -23,7 +23,7 @@ void getJobState(JobHandle job, JobState *state)
     auto jobContext = static_cast<JobContext *>(job);
     jobContext->lockJobStateMutex();
 
-    *state = jobContext->getJobState();// TODO - valid and efficient struct copy-assignment?
+    *state = jobContext->getJobState();
 
     jobContext->unlockJobStateMutex();
 }
