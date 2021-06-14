@@ -16,7 +16,7 @@ TARGETS = $(OSMLIB)
 TAR=tar
 TARFLAGS=-cvf
 TARNAME=ex3.tar
-TARSRCS=$(LIBSRC) $(LIBH) Makefile README fileWordCounter_comparison.png
+TARSRCS=$(LIBSRC) $(LIBH) Makefile README
 
 all: $(TARGETS)
 
