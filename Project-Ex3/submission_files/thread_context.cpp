@@ -3,6 +3,7 @@
 //
 
 #include <unistd.h>
+#include <unordered_map>
 #include "thread_context.h"
 #include "job_context.h"
 
@@ -10,7 +11,8 @@
 ThreadContext::ThreadContext(size_t tid, JobContext& jobContext)
 : thread_id_(tid),
   pthreadThread_(),
-  currentJobContext_(jobContext)
+  currentJobContext_(jobContext),
+  isJoined_(false)
 {
     if (pthread_create(&pthreadThread_, nullptr, _threadEntryPoint, static_cast<void *>(this)))
     {
@@ -47,23 +49,27 @@ void *ThreadContext::_threadEntryPoint(void *context)
 
 void ThreadContext::pthreadJoin()
 {
-    if (pthread_join(pthreadThread_, nullptr))
+    if (!isJoined_ && pthread_join(pthreadThread_, nullptr))
     {
         systemError("[[pthread_join]] failed.");
     }
+    isJoined_ = true;
 }
 
 void ThreadContext::invokeMapPhase()
 {
-    JobContext& currJobContext = currentJobContext_;
+    currentJobContext_.setJobStateStage(MAP_STAGE);
+    size_t numOfInputElems = currentJobContext_.getNumOfInputElems();
     size_t ix;
-    while ((ix = currJobContext.lastThreadAtomicGetIncrement()) < currJobContext.getNumOfInputElems())
+    while ((ix = currentJobContext_.lastThreadAtomicGetIncrement()) < numOfInputElems)
     {
         // distributing input elements among the thread workers
-        auto elem = currJobContext.getInputVector()[ix];
-        currJobContext.invokeClientMapRoutine(elem.first, elem.second, static_cast<void *>(this));
+        auto elem = currentJobContext_.getInputVector()[ix];
+        currentJobContext_.invokeClientMapRoutine(elem.first, elem.second, static_cast<void *>(this));
+
+        auto amountOfProcessedElems = currentJobContext_.lastProcessedInputElementGetAndIncrement();
+        currentJobContext_.setJobStatePercentage((float(amountOfProcessedElems) / numOfInputElems) * 100);
     }
-    // TODO percentage, job state, etc. accordingly - to be continued...
 }
 
 void ThreadContext::invokeSortPhase()
@@ -75,18 +81,47 @@ void ThreadContext::invokeShufflePhase()
 {
     if (thread_id_ == 0) // by convention - only thread-0 performs the shuffle phase
     {
+        // TODO - do this function from scratch!
+        currentJobContext_.setJobStateStage(SHUFFLE_STAGE);
+        size_t numOfIntermediatePairs = currentJobContext_.getNumOfIntermediatePairs();
 
+        auto numOfThreads = currentJobContext_.getNumOfThreads();
+        //IntermediatePair==std::pair<K2*, V2*>
+        std::unordered_map<K2*, IntermediateVec> keyToVectorOfPairs;//IntermediateVec==std::vector<IntermediatePair>
+        for (size_t i = 0; i < numOfThreads; ++i){
+            // std::vector<std::pair<K2*, V2*>> sorted by K2
+            auto currIntermediateVec =
+                    currentJobContext_.getThreadContext(i).getIntermediateVec();
+            for(const auto& elem : currIntermediateVec){
+                keyToVectorOfPairs[elem.first].emplace_back(elem);
+            }
+        }
+        auto shuffledQueue = currentJobContext_.getShuffledQueue(); // std::vector<std::vector<std::pair<K2*, V2*>>>
+        for(const auto& sameKeyPairVector : keyToVectorOfPairs){
+            shuffledQueue.emplace_back(sameKeyPairVector.second);
+        }
+
+        currentJobContext_.setJobStatePercentage(
+                (float(JobContext::getNumOfShuffledPairs(
+                        shuffledQueue)) / numOfIntermediatePairs) * 100);
     }
-    else
-    {
-        // if you're not thread-0 => get some sleep letting him finish shuffling
-        sleep(1);
-    }
+    // else => you aren't thread-0, so go wait on barrier
 }
 
 void ThreadContext::invokeReducePhase()
 {
-    // TODO - implement logic
+    currentJobContext_.setJobStateStage(REDUCE_STAGE);
+    size_t numOfShuffleElems = JobContext::getNumOfShuffledPairs(currentJobContext_.getShuffledQueue());
+    size_t ix;
+    auto shuffleQueue = currentJobContext_.getShuffledQueue();
+    while ((ix = currentJobContext_.shuffleAtomicCounter()) < shuffleQueue.size())
+    {
+        currentJobContext_.invokeClientReduceRoutine(&shuffleQueue[ix],static_cast<void *>(this));
+
+        auto amountOfProcessedElems = currentJobContext_.lastProcessedShuffledElementGetAndIncrement();
+        currentJobContext_.setJobStatePercentage(
+                (float(amountOfProcessedElems) / numOfShuffleElems) * 100);
+    }
 }
 
 void ThreadContext::pushIntermediateElem(IntermediatePair&& intermediatePair)

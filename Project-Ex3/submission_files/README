@@ -1,0 +1,17 @@
+danshumayev
+Dan Shumayev (207050691)
+EX: 3
+
+FILES:
+MapReduceFramework.cpp - the file with the implementation of the MapReduce framework
+Barrier.h - the header file of the Barrier class
+Barrier.cpp - the cpp file with the implementation of the methods of the Barrier class.
+exceptions.h - header file for possible exception in our library
+exceptions.cpp - implementation of the exception
+job_context.h - class describing JobContext object, which represents a job handle with its own threads
+job_context.cpp - implementation of JonContext class, using another class of ThreadContext wrapping pthread_t
+thread_context.h - wrapper of pthread_t. it manages the threads' work on JobContext
+thread_context.cpp - implementation of ThreadContext class
+
+REMARKS:
+The source code is heavily commented.

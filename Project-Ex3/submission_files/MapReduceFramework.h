@@ -86,10 +86,6 @@ void getJobState(JobHandle job, JobState* state);
  * Releasing all resources of a job. You should prevent releasing resources before the job finished.
  * After this function is called the job handle will be invalid.
  * @param job
- * TODO - In case that the function is called and the job is not finished yet wait until the job is
-        finished to close it.
-        In order to release mutexes and semaphores (pthread_mutex, sem_t) you should use the
-        functions pthread_mutex_destroy, sem_destroy.
  */
 void closeJobHandle(JobHandle job);
 	

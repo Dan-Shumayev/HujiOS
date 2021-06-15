@@ -24,6 +24,7 @@ private:
     // a smart pointer (we'd wish to define) into a void*. But, casting a smart pointer
     // defects its destruction.
     IntermediateVec intermediateVec_;
+    bool isJoined_; // true iff pthread_join was called on pthreadThread
 
 public:
     ThreadContext(size_t tid, JobContext& jobContext);
@@ -45,6 +46,8 @@ public:
     void pushIntermediateElem(IntermediatePair&& intermediatePair);
 
     void pushOutputElem(OutputPair&& outputPair);
+
+    IntermediateVec& getIntermediateVec() {return intermediateVec_;};
 };
 
 
