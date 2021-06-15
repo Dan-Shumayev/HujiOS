@@ -49,11 +49,12 @@ void *ThreadContext::_threadEntryPoint(void *context)
 
 void ThreadContext::pthreadJoin()
 {
-    if (!isJoined_ && pthread_join(pthreadThread_, nullptr))
-    {
-        systemError("[[pthread_join]] failed.");
+    if (!isJoined_) {
+        if (pthread_join(pthreadThread_, nullptr)) {
+            systemError("[[pthread_join]] failed.");
+        }
+        isJoined_ = true;
     }
-    isJoined_ = true;
 }
 
 void ThreadContext::invokeMapPhase()
