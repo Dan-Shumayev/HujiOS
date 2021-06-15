@@ -9,8 +9,19 @@
 #include <cstddef> // size_t
 #include <pthread.h> // pthread_t
 #include <algorithm> // std::sort
+#include <map>
 #include "exceptions.h"
 #include "MapReduceClient.h"
+
+// TODO - use those to implement Shuffle
+struct K2PointerComp {
+    bool operator()(const K2* first, const K2* second) const
+    {
+        return (*first < *second);
+    }
+};
+
+typedef std::map<K2*, std::vector<V2 *>, K2PointerComp> IntermediateMap;
 
 /** forward-declaration to break the include-cycle */
 class JobContext;
