@@ -7,8 +7,8 @@ LIBSRC=*.cpp
 LIBOBJ=$(LIBSRC:.cpp=.o)
 
 INCS=-I.
-CFLAGS = -Wall -std=c++11 $(INCS)
-CXXFLAGS = -Wall -std=c++11 $(INCS)
+CFLAGS = -Wall -Wextra -std=c++11 $(INCS)
+CXXFLAGS = -Wall -Wextra -std=c++11 $(INCS)
 
 UTHREADLIB = libuthreads.a
 TARGETS = $(UTHREADLIB)
