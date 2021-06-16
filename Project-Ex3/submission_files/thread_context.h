@@ -40,7 +40,8 @@ private:
 public:
     ThreadContext(size_t tid, JobContext& jobContext);
 
-    static void *_threadEntryPoint(void *context);
+    static void *_threadEntryPoint(void *context); // TODO - consider implementing separated entry point for thread-0
+                                                        // TODO as he exclusively invokes ShufflePhase
 
     JobContext& getJobContext() {return currentJobContext_;};
 

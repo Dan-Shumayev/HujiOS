@@ -22,12 +22,16 @@ private:
     // such a type, but only referring to its origin
 
     /** Job-associated data */
+    // TODO - Consider implementing an abstract class describing StageState which MapState/ReduceState inherits from
+    //  so that ThreadContext doesn't have to deal with Output/Intermediate vectors explicitly but ThreadContext may
+    //  may use instance of type like std::unique_ptr<StageState> for dealing with these matters.
     const InputVec& inputVec_; // isn't supposed to be modified
     OutputVec outputVec_; // emit3's outputs
     JobState currJobState_;
     std::atomic<size_t> lastProcessedInputElementGetAndIncrement_;
     std::atomic<size_t> lastProcessedShuffledElementGetAndIncrement_;
     pthread_mutex_t jobStateMutex_;
+    // TODO - consider managing the JobState using this bitwise approach
 /**std::atomic<std::uint64_t> jobStateBitwise_;*/ /** First 2 bits indicates stage_t (4 options), next 31 bits indicate
                                                 number of processed elements at the current stage, next 31 bits indicate
                                                 number of total elements to process at this stage */
@@ -70,7 +74,7 @@ public:
 
     void setJobStatePercentage(float currentPercent) { currJobState_.percentage = currentPercent;};
 
-    void lockOutputVecMutex();
+    void lockOutputVecMutex(); // TODO - consider creating a wrapper class to lock/unlock mutexes
 
     void unlockOutputVecMutex();
 
