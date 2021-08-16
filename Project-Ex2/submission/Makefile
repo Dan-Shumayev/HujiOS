@@ -16,7 +16,7 @@ TARGETS = $(UTHREADLIB)
 TAR=tar
 TARFLAGS=-cvf
 TARNAME=ex2.tar
-TARSRCS=$(LIBSRC) $(LIBH) Makefile README
+TARSRCS=$(LIBSRC) $(LIBH) Makefile README Appeal
 
 all: $(TARGETS)
 

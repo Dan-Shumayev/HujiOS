@@ -7,8 +7,8 @@ LIBSRC=MapReduceFramework.cpp Barrier.cpp job_context.cpp thread_context.cpp exc
 LIBOBJ=$(LIBSRC:.cpp=.o)
 
 INCS=-I.
-CFLAGS = -Wall -Wextra -std=c++11 -g $(INCS)
-CXXFLAGS = -Wall -Wextra -std=c++11 -g $(INCS)
+CFLAGS = -Wall -Wextra -Wpedantic -std=c++11 -g $(INCS)
+CXXFLAGS = -Wall -Wextra -Wpedantic -std=c++11 -g $(INCS)
 
 OSMLIB = libMapReduceFramework.a
 TARGETS = $(OSMLIB)

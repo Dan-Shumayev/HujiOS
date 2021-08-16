@@ -12,10 +12,9 @@ Scheduler::Scheduler(int quantum_usecs) // map, deque, set and struct are defaul
 : currentRunningThread_(0), // main thread(0) initializes the scheduler
     tidToTerminate_(-1), // -1 indicates no thread is supposed to be terminated
     total_quantum_(1),
-    sigAlarm_{timerHandlerGlobal}, // initializes the first field of sigAlarm (sa_handler) as needed, others zeroed
     mutexLockedByThreadId_(-1),
   threadQuantum_(quantum_usecs)
-    {
+{
     /** Insert the main thread into the entire collection of concurrent threads,
     Assuming no element with this ID in threads_. using piecewise_construct because it's not copyable
     so it constructs the pair manually.
@@ -28,6 +27,8 @@ Scheduler::Scheduler(int quantum_usecs) // map, deque, set and struct are defaul
     main.incrementNumOfQuantum();
 
     // set timer handler
+    struct sigaction sigAlarm_{}; // Initialize all the fields
+    sigAlarm_.sa_handler = timerHandlerGlobal; // Asdign the first field of sigAlarm (sa_handler) as needed, others zeroed
     if (sigaction(SIGVTALRM, &sigAlarm_, nullptr) != 0)
     {
         uthreadSystemException("sigaction");
@@ -228,7 +229,7 @@ int Scheduler::blockThread(int tid)
     {
         return uthreadException("Can't block main thread");
     }
-    Thread& threadToBlock = threads_[tid];
+//    Thread& threadToBlock = threads_[tid]; // TODO - consider using it
     if (blockedThreads_.find(tid) != blockedThreads_.end()) // already blocked -> no-operation required
     {
         return EXIT_SUCCESS;

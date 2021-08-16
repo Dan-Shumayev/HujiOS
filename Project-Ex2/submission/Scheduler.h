@@ -37,20 +37,21 @@ private:
     /** Currently running thread's ID */
     int currentRunningThread_;
 
-    /** Equals to the thread's ID which locks the mutex, otherwise if no one locks it, equals to -1 */
-    int mutexLockedByThreadId_;
+    /** Thread's ID to be terminated during the next running thread */
+    int tidToTerminate_;
 
     /** threads waiting for the mutex to be unlocked, upon mutex unlocking, one of them becomes READY */
     std::unordered_set<int> blockedByMutexThreads_;
 
-    /** Thread's ID to be terminated during the next running thread */
-    int tidToTerminate_;
-
-    struct sigaction sigAlarm_;
-    int threadQuantum_; // the time in micro-seconds for each thread to occupy the CPU
-
     /** Accounting information: */
     int total_quantum_;
+
+    struct sigaction sigAlarm_;
+
+    /** Equals to the thread's ID which locks the mutex, otherwise if no one locks it, equals to -1 */
+    int mutexLockedByThreadId_;
+
+    int threadQuantum_; // the time in micro-seconds for each thread to occupy the CPU
 
     /**
      * @return Returns the the lowest unused thread ID. If no unused ID, return -1.
