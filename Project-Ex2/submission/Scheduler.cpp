@@ -28,7 +28,7 @@ Scheduler::Scheduler(int quantum_usecs) // map, deque, set and struct are defaul
 
     // set timer handler
     struct sigaction sigAlarm_{}; // Initialize all the fields
-    sigAlarm_.sa_handler = timerHandlerGlobal; // Asdign the first field of sigAlarm (sa_handler) as needed, others zeroed
+    sigAlarm_.sa_handler = timerHandlerGlobal; // Assign the first field of sigAlarm (sa_handler) as needed, others zeroed
     if (sigaction(SIGVTALRM, &sigAlarm_, nullptr) != 0)
     {
         uthreadSystemException("sigaction");
