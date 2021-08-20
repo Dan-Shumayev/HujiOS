@@ -1,0 +1,57 @@
+[
+{
+  "directory": "/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests",
+  "command": "/usr/bin/c++      -Wall -Wextra -DNDEBUG -std=gnu++11 -o CMakeFiles/uthreads.dir/uthreads.cpp.o -c /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/uthreads.cpp",
+  "file": "/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/uthreads.cpp"
+},
+{
+  "directory": "/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests",
+  "command": "/usr/bin/c++      -Wall -Wextra -DNDEBUG -std=gnu++11 -o CMakeFiles/uthreads.dir/Thread.cpp.o -c /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/Thread.cpp",
+  "file": "/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/Thread.cpp"
+},
+{
+  "directory": "/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests",
+  "command": "/usr/bin/c++      -Wall -Wextra -DNDEBUG -std=gnu++11 -o CMakeFiles/uthreads.dir/Scheduler.cpp.o -c /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/Scheduler.cpp",
+  "file": "/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/Scheduler.cpp"
+},
+{
+  "directory": "/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests",
+  "command": "/usr/bin/c++      -Wall -Wextra -DNDEBUG -std=gnu++11 -o CMakeFiles/uthreads.dir/uthread_exception.cpp.o -c /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/uthread_exception.cpp",
+  "file": "/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/uthread_exception.cpp"
+},
+{
+  "directory": "/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests",
+  "command": "/usr/bin/c++      -Wall -Wextra -DNDEBUG -std=gnu++11 -o CMakeFiles/uthreads.dir/uthread_utilities.cpp.o -c /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/uthread_utilities.cpp",
+  "file": "/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/uthread_utilities.cpp"
+},
+{
+  "directory": "/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests",
+  "command": "/usr/bin/c++   -I/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/.. -isystem /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests/googletest-src/googletest/include -isystem /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests/googletest-src/googletest    -Wall -Wextra -std=gnu++11 -o CMakeFiles/theTests.dir/tests_to_be_ran_separately.cpp.o -c /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests_to_be_ran_separately.cpp",
+  "file": "/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests_to_be_ran_separately.cpp"
+},
+{
+  "directory": "/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests",
+  "command": "/usr/bin/c++   -I/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/.. -isystem /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests/googletest-src/googletest/include -isystem /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests/googletest-src/googletest    -Wall -Wextra -std=gnu++11 -o CMakeFiles/theTests.dir/__/Scheduler.cpp.o -c /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/Scheduler.cpp",
+  "file": "/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/Scheduler.cpp"
+},
+{
+  "directory": "/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests",
+  "command": "/usr/bin/c++   -I/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/.. -isystem /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests/googletest-src/googletest/include -isystem /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests/googletest-src/googletest    -Wall -Wextra -std=gnu++11 -o CMakeFiles/theTests.dir/__/Thread.cpp.o -c /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/Thread.cpp",
+  "file": "/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/Thread.cpp"
+},
+{
+  "directory": "/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests",
+  "command": "/usr/bin/c++   -I/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/.. -isystem /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests/googletest-src/googletest/include -isystem /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests/googletest-src/googletest    -Wall -Wextra -std=gnu++11 -o CMakeFiles/theTests.dir/__/uthreads.cpp.o -c /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/uthreads.cpp",
+  "file": "/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/uthreads.cpp"
+},
+{
+  "directory": "/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests",
+  "command": "/usr/bin/c++   -I/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/.. -isystem /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests/googletest-src/googletest/include -isystem /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests/googletest-src/googletest    -Wall -Wextra -std=gnu++11 -o CMakeFiles/theTests.dir/__/uthread_utilities.cpp.o -c /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/uthread_utilities.cpp",
+  "file": "/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/uthread_utilities.cpp"
+},
+{
+  "directory": "/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests",
+  "command": "/usr/bin/c++   -I/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/.. -isystem /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests/googletest-src/googletest/include -isystem /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests/googletest-src/googletest    -Wall -Wextra -std=gnu++11 -o CMakeFiles/theTests.dir/__/uthread_exception.cpp.o -c /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/uthread_exception.cpp",
+  "file": "/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/uthread_exception.cpp"
+}
+]

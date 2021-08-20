@@ -92,7 +92,7 @@ void threadQuantumSleep(int threadQuants)
 
 
 /**
- * Testing basic thred library functionality and expected errors
+ * Testing basic thread library functionality and expected errors
  */
 TEST(Test1, BasicFunctionality)
 {
@@ -102,7 +102,7 @@ TEST(Test1, BasicFunctionality)
         return uthread_init(invalidPriorities1);
     });
 
-   int priorites =  100 * MILLISECOND;
+    int priorites =  100 * MILLISECOND;
 //
 //    expect_thread_library_error([&](){
 //        // invalid size
@@ -171,7 +171,7 @@ TEST(Test1, BasicFunctionality)
     });
 
 
-   ASSERT_EXIT(uthread_terminate(0), ::testing::ExitedWithCode(0), "");
+    ASSERT_EXIT(uthread_terminate(0), ::testing::ExitedWithCode(0), "");
 }
 
 /** A slightly more complex test, involving two threads, blocking and resuming(jumping to each thread only once) */
@@ -281,19 +281,19 @@ TEST(Test3, ThreadExecutionOrder)
     // (indices refer to main thread loop)
 
     std::map<int, int> expectedQuantumsToTids {
-        {1, 0},
-        {2,1},
-        {3,2},
-        {4,0},
-        {5,2},
-        {6,1},
-        {7,0},
-        {8,2},
-        {9,1},
-        {10,0},
-        {11,2},
-        {12,1},
-        {13, 0}
+            {1, 0},
+            {2,1},
+            {3,2},
+            {4,0},
+            {5,2},
+            {6,1},
+            {7,0},
+            {8,2},
+            {9,1},
+            {10,0},
+            {11,2},
+            {12,1},
+            {13, 0}
     };
     EXPECT_EQ( quantumsToTids, expectedQuantumsToTids);
 
@@ -376,68 +376,68 @@ uint64_t timeOperation(Function op) {
 }
 
 class RandomThreadTesting {
-        std::set<int> activeThreads;
-        int priorities = 1;
-        int priorityCount;
-        std::mt19937 rand;
+    std::set<int> activeThreads;
+    int priorities = 1;
+    int priorityCount;
+    std::mt19937 rand;
 
-    public:
-        RandomThreadTesting(std::initializer_list<int> pr)
-        : activeThreads(),
-          priorityCount(pr.size()),
-          rand{std::random_device{}()}
+public:
+    RandomThreadTesting(std::initializer_list<int> pr)
+            : activeThreads(),
+              priorityCount(pr.size()),
+              rand{std::random_device{}()}
+    {
+        initializeWithPriorities(priorities);
+    }
+
+    int getRandomActiveThread()
+    {
+        auto it = activeThreads.begin();
+        auto dist  = std::uniform_int_distribution<>(0, activeThreads.size() - 1);
+        std::advance(it, dist(rand));
+        assert (it != activeThreads.end());
+        return *it;
+    }
+
+
+    /**
+     * Perform random thread library operation, except those involving thread 0
+     * @param func Thread function if spawning
+     */
+    void doOperation(void (*func)())
+    {
+        // 50% chance of doing a thread operation(1-5), 50% of not doing anything(6-10)
+        // if there are no threads, create new one
+        int option = std::uniform_int_distribution<>(1, 10)(rand);
+        if (activeThreads.empty() || (option == 1 && activeThreads.size() < MAX_THREAD_NUM - 1) )
         {
-            initializeWithPriorities(priorities);
-        }
+            int tid = uthread_spawn(func);
+            EXPECT_GT(tid, 0);
+            activeThreads.emplace(tid);
+        } else {
+            int tid = getRandomActiveThread();
 
-        int getRandomActiveThread()
-        {
-            auto it = activeThreads.begin();
-            auto dist  = std::uniform_int_distribution<>(0, activeThreads.size() - 1);
-            std::advance(it, dist(rand));
-            assert (it != activeThreads.end());
-            return *it;
-        }
-
-
-        /**
-         * Perform random thread library operation, except those involving thread 0
-         * @param func Thread function if spawning
-         */
-        void doOperation(void (*func)())
-        {
-            // 50% chance of doing a thread operation(1-5), 50% of not doing anything(6-10)
-            // if there are no threads, create new one
-            int option = std::uniform_int_distribution<>(1, 10)(rand);
-            if (activeThreads.empty() || (option == 1 && activeThreads.size() < MAX_THREAD_NUM - 1) )
+            if (option == 3)
             {
-                int tid = uthread_spawn(func);
-                EXPECT_GT(tid, 0);
-                activeThreads.emplace(tid);
+                // terminate thread
+                EXPECT_EQ(uthread_terminate(tid), 0);
+                activeThreads.erase(tid);
+            } else if (option == 4)
+            {
+                // block thread
+                EXPECT_EQ(uthread_block(tid), 0);
+            } else if (option == 5)
+            {
+                // resume thread
+                EXPECT_EQ(uthread_resume(tid), 0);
             } else {
-                int tid = getRandomActiveThread();
-
-                if (option == 3)
-                {
-                    // terminate thread
-                    EXPECT_EQ(uthread_terminate(tid), 0);
-                    activeThreads.erase(tid);
-                } else if (option == 4)
-                {
-                    // block thread
-                    EXPECT_EQ(uthread_block(tid), 0);
-                } else if (option == 5)
-                {
-                    // resume thread
-                    EXPECT_EQ(uthread_resume(tid), 0);
-                } else {
-                    // don't perform a thread operation
-                }
-            } // OOP? open closed principle? ain't nobody got time for that
-        }
+                // don't perform a thread operation
+            }
+        } // OOP? open closed principle? ain't nobody got time for that
+    }
 
 
-    };
+};
 
 /** This test performs a bunch of random thread library operations, it is used
  *  to detect crashes and other memory errors
@@ -960,6 +960,8 @@ TEST(Test14, MutexTest8)
 
         ran = true;
 
+        EXPECT_EQ(uthread_mutex_unlock(),0);
+
         EXPECT_EQ(uthread_terminate(uthread_get_tid()),0);
 
     };
@@ -974,6 +976,8 @@ TEST(Test14, MutexTest8)
         EXPECT_TRUE(ran);
 
         ran2 = true;
+
+        EXPECT_EQ(uthread_mutex_unlock(),0);
 
         EXPECT_EQ(uthread_terminate(uthread_get_tid()),0);
     };
@@ -997,10 +1001,144 @@ TEST(Test14, MutexTest8)
     ASSERT_EXIT(uthread_terminate(0), ::testing::ExitedWithCode(0), "");
 }
 
+// doesn't assume fifo - i think
+TEST(Test15, MutexTest9)
+{
+
+    int priorites =  100 * MILLISECOND;
+    initializeWithPriorities(priorites);
+
+    static bool ran = false;
+    static bool ran2 = false;
+    auto t1 = []()
+    {
+        EXPECT_EQ(uthread_get_tid(), 1);
+
+        expect_thread_library_error(uthread_mutex_unlock);
+
+        EXPECT_EQ(uthread_mutex_lock(),0);
 
 
 
+        ran2 = true;
+
+        EXPECT_EQ(uthread_mutex_unlock(),0);
+
+        EXPECT_EQ(uthread_terminate(uthread_get_tid()),0);
+
+    };
+
+    auto t2 = [] {
+
+        EXPECT_EQ(uthread_get_tid(), 2);
+
+        EXPECT_EQ(uthread_mutex_unlock(),-1);
+
+        ran = true;
+
+        EXPECT_EQ(uthread_terminate(uthread_get_tid()),0);
+
+    };
 
 
+    EXPECT_EQ(uthread_spawn(t1), 1);
 
+    EXPECT_EQ(uthread_spawn(t2), 2);
 
+    EXPECT_EQ(uthread_mutex_lock(),0);
+
+    threadQuantumSleep(1);
+
+    EXPECT_TRUE(!ran2 && ran);
+
+    EXPECT_EQ(uthread_mutex_unlock(),0);
+
+    threadQuantumSleep(1);
+
+    EXPECT_TRUE(ran2 && ran);
+
+    ASSERT_EXIT(uthread_terminate(0), ::testing::ExitedWithCode(0), "");
+}
+
+// assumes fifo
+TEST(Test16, MutexTest10)
+{
+
+    int priorites =  100 * MILLISECOND;
+    initializeWithPriorities(priorites);
+
+    static bool ran = false;
+    static bool ran2 = false;
+    static bool ran3 = false;
+    auto t1 = []()
+    {
+        EXPECT_EQ(uthread_get_tid(), 1);
+
+        EXPECT_EQ(uthread_mutex_lock(),0);
+
+        ran = true;
+
+        threadQuantumSleep(1);
+
+        expect_thread_library_error(uthread_mutex_lock);
+
+        EXPECT_EQ(uthread_mutex_unlock(),0);
+
+        EXPECT_EQ(uthread_terminate(uthread_get_tid()),0);
+
+    };
+
+    auto t2 = [] {
+
+        EXPECT_EQ(uthread_get_tid(), 2);
+
+        EXPECT_EQ(uthread_mutex_lock(),0);
+
+        ran2 = true;
+
+        EXPECT_EQ(uthread_mutex_unlock(),0);
+
+        EXPECT_EQ(uthread_terminate(uthread_get_tid()),0);
+
+    };
+
+    auto t3 = [] {
+
+        EXPECT_EQ(uthread_get_tid(), 1);
+
+        EXPECT_EQ(uthread_mutex_lock(),0);
+
+        ran3 = true;
+
+        EXPECT_EQ(uthread_mutex_unlock(),0);
+
+        EXPECT_EQ(uthread_terminate(uthread_get_tid()),0);
+
+    };
+
+    EXPECT_EQ(uthread_spawn(t1), 1);
+
+    EXPECT_EQ(uthread_spawn(t2), 2);
+
+    threadQuantumSleep(1);
+
+    EXPECT_TRUE(!ran2 && ran);
+
+    EXPECT_EQ(uthread_mutex_lock(),0);
+
+    // all locked except 1 so will go there
+
+    EXPECT_TRUE(ran2 && ran);
+
+    EXPECT_EQ(uthread_spawn(t3),1);
+
+    threadQuantumSleep(1);
+
+    EXPECT_EQ(uthread_mutex_unlock(),0);
+
+    threadQuantumSleep(1);
+
+    EXPECT_TRUE(ran2 && ran && ran3);
+
+    ASSERT_EXIT(uthread_terminate(0), ::testing::ExitedWithCode(0), "");
+}
