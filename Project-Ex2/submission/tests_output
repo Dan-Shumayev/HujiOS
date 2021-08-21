@@ -1,24 +1,128 @@
 Running main() from /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/cmake-build-debug/tests/googletest-src/googletest/src/gtest_main.cc
-Note: Google Test filter = Test2*
-[==========] Running 1 test from 1 test suite.
+Note: Google Test filter = Test1*
+[==========] Running 8 tests from 8 test suites.
 [----------] Global test environment set-up.
-[----------] 1 test from Test2
-[ RUN      ] Test2.ThreadSchedulingWithTermination
-AddressSanitizer:DEADLYSIGNAL
-=================================================================
-==18778==ERROR: AddressSanitizer: SEGV on unknown address 0x000000000008 (pc 0x55b8478c723f bp 0x629000008bd0 sp 0x629000008b90 T0)
-==18778==The signal is caused by a READ memory access.
-==18778==Hint: address points to the zero page.
-    #0 0x55b8478c723e in std::__detail::_Hash_code_base<int, int, std::__detail::_Identity, std::hash<int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, false>::_M_bucket_index(std::__detail::_Hash_node<int, false> const*, unsigned long) const /usr/include/c++/9/bits/hashtable_policy.h:1304
-    #1 0x55b8478c53bd in std::_Hashtable<int, int, std::allocator<int>, std::__detail::_Identity, std::equal_to<int>, std::hash<int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, true, true> >::_M_bucket_index(std::__detail::_Hash_node<int, false>*) const /usr/include/c++/9/bits/hashtable.h:640
-    #2 0x55b8478c19cc in std::_Hashtable<int, int, std::allocator<int>, std::__detail::_Identity, std::equal_to<int>, std::hash<int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, true, true> >::erase(std::__detail::_Node_const_iterator<int, true, false>) (/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/cmake-build-debug/tests/theTests+0x1119cc)
-    #3 0x55b8478beade in std::_Hashtable<int, int, std::allocator<int>, std::__detail::_Identity, std::equal_to<int>, std::hash<int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, true, true> >::erase(std::__detail::_Node_iterator<int, true, false>) /usr/include/c++/9/bits/hashtable.h:768
-    #4 0x55b8478bbef1 in std::unordered_set<int, std::hash<int>, std::equal_to<int>, std::allocator<int> >::erase(std::__detail::_Node_iterator<int, true, false>) (/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/cmake-build-debug/tests/theTests+0x10bef1)
-    #5 0x55b8478b9e76 in Scheduler::resumeThread(int) /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/Scheduler.cpp:267
-    #6 0x55b8478ca330 in uthread_resume(int) /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/uthreads.cpp:54
-    #7 0x55b84786465b in operator() /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests_to_be_ran_separately.cpp:193
-    #8 0x55b847864c1b in _FUN /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests_to_be_ran_separately.cpp:195
+[----------] 1 test from Test1
+[ RUN      ] Test1.BasicFunctionality
+[       OK ] Test1.BasicFunctionality (171 ms)
+[----------] 1 test from Test1 (171 ms total)
 
-AddressSanitizer can not provide additional info.
-SUMMARY: AddressSanitizer: SEGV /usr/include/c++/9/bits/hashtable_policy.h:1304 in std::__detail::_Hash_code_base<int, int, std::__detail::_Identity, std::hash<int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, false>::_M_bucket_index(std::__detail::_Hash_node<int, false> const*, unsigned long) const
-==18778==ABORTING
+[----------] 1 test from Test10
+[ RUN      ] Test10.MutexTest4
+/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests_to_be_ran_separately.cpp:675: Failure
+Value of: ran
+  Actual: false
+Expected: true
+[  FAILED  ] Test10.MutexTest4 (647 ms)
+[----------] 1 test from Test10 (647 ms total)
+
+[----------] 1 test from Test11
+[ RUN      ] Test11.MutexTest5
+/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests_to_be_ran_separately.cpp:733: Failure
+Expected equality of these values:
+  uthread_mutex_unlock()
+    Which is: 0
+  -1
+/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests_to_be_ran_separately.cpp:756: Failure
+Value of: ran && ran2
+  Actual: false
+Expected: true
+thread library error: can't unlock unlocked mutex
+[  FAILED  ] Test11.MutexTest5 (939 ms)
+[----------] 1 test from Test11 (939 ms total)
+
+[----------] 1 test from Test12
+[ RUN      ] Test12.MutexTest6
+/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests_to_be_ran_separately.cpp:848: Failure
+Value of: ran && ran2
+  Actual: false
+Expected: true
+[  FAILED  ] Test12.MutexTest6 (1165 ms)
+[----------] 1 test from Test12 (1165 ms total)
+
+[----------] 1 test from Test13
+[ RUN      ] Test13.MutexTest7
+/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests_to_be_ran_separately.cpp:888: Failure
+Value of: ran2
+  Actual: false
+Expected: true
+[  FAILED  ] Test13.MutexTest7 (746 ms)
+[----------] 1 test from Test13 (746 ms total)
+
+[----------] 1 test from Test14
+[ RUN      ] Test14.MutexTest8
+/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests_to_be_ran_separately.cpp:997: Failure
+Value of: ran2
+  Actual: false
+Expected: true
+[  FAILED  ] Test14.MutexTest8 (796 ms)
+[----------] 1 test from Test14 (796 ms total)
+
+[----------] 1 test from Test15
+[ RUN      ] Test15.MutexTest9
+/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests_to_be_ran_separately.cpp:40: Failure
+Expected equality of these values:
+  retCode
+    Which is: 0
+  -1
+failed thread library call should return -1
+/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests_to_be_ran_separately.cpp:43: Failure
+Failed
+no appropriate STDERR message was printed for failed thread library call
+thread library error: can't unlock unlocked mutex
+/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests_to_be_ran_separately.cpp:1051: Failure
+Value of: !ran2 && ran
+  Actual: false
+Expected: true
+thread library error: can't unlock unlocked mutex
+/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests_to_be_ran_separately.cpp:1053: Failure
+Expected equality of these values:
+  uthread_mutex_unlock()
+    Which is: -1
+  0
+[  FAILED  ] Test15.MutexTest9 (460 ms)
+[----------] 1 test from Test15 (460 ms total)
+
+[----------] 1 test from Test16
+[ RUN      ] Test16.MutexTest10
+thread library error: Can't block main thread
+/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests_to_be_ran_separately.cpp:1130: Failure
+Value of: ran2 && ran
+  Actual: false
+Expected: true
+/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests_to_be_ran_separately.cpp:1132: Failure
+Expected equality of these values:
+  uthread_spawn(t3)
+    Which is: 3
+  1
+/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests_to_be_ran_separately.cpp:1106: Failure
+Expected equality of these values:
+  uthread_get_tid()
+    Which is: 3
+  1
+thread library error: can't unlock unlocked mutex
+/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests_to_be_ran_separately.cpp:1136: Failure
+Expected equality of these values:
+  uthread_mutex_unlock()
+    Which is: -1
+  0
+/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests_to_be_ran_separately.cpp:1140: Failure
+Value of: ran2 && ran && ran3
+  Actual: false
+Expected: true
+[  FAILED  ] Test16.MutexTest10 (802 ms)
+[----------] 1 test from Test16 (802 ms total)
+
+[----------] Global test environment tear-down
+[==========] 8 tests from 8 test suites ran. (5730 ms total)
+[  PASSED  ] 1 test.
+[  FAILED  ] 7 tests, listed below:
+[  FAILED  ] Test10.MutexTest4
+[  FAILED  ] Test11.MutexTest5
+[  FAILED  ] Test12.MutexTest6
+[  FAILED  ] Test13.MutexTest7
+[  FAILED  ] Test14.MutexTest8
+[  FAILED  ] Test15.MutexTest9
+[  FAILED  ] Test16.MutexTest10
+
+ 7 FAILED TESTS

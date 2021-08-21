@@ -264,6 +264,7 @@ int Scheduler::resumeThread(int tid)
     if (threadIt == blockedByMutexThreads_.end())
     {
         // it's not mutex-blocked, then delete it from blocked threads and queue it to the ready threads
+        auto threadIt = blockedThreads_.find(tid);
         blockedThreads_.erase(threadIt);
         readyQueue_.emplace_back(tid);
     }

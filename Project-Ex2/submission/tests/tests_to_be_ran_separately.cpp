@@ -170,11 +170,10 @@ TEST(Test1, BasicFunctionality)
         return uthread_terminate(1);
     });
 
-
     ASSERT_EXIT(uthread_terminate(0), ::testing::ExitedWithCode(0), "");
 }
 
-/** A slightly more complex test, involving two threads, blocking and resuming(jumping to each thread only once) */
+/** A slightly more complex test, involving two threads, blocking and resuming (jumping to each thread only once) */
 TEST(Test2, ThreadSchedulingWithTermination)
 {
     int priorities= MILLISECOND ;
