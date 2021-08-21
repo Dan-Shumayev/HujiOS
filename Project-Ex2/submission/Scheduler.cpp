@@ -12,7 +12,8 @@
 Scheduler::Scheduler(int quantum_usecs) // map, deque, set and struct are default constructed implicitly
 : currentRunningThread_(0), // main thread(0) initializes the scheduler
     tidToTerminate_(-1), // -1 indicates no thread is supposed to be terminated
-    total_quantum_(1),
+    total_quantum_(0),
+    sigAlarm_(),
     mutexLockedByThreadId_(-1),
   threadQuantum_(quantum_usecs)
 {
@@ -25,10 +26,11 @@ Scheduler::Scheduler(int quantum_usecs) // map, deque, set and struct are defaul
                      std::forward_as_tuple());
 
     Thread& main = threads_[0];
-    main.incrementNumOfQuantum();
+    main.incrementNumOfQuantum(); // First quantum occupied by the main thread
+    total_quantum_++; // Total quantum
 
     // set timer handler
-    struct sigaction sigAlarm_{}; // Initialize all the fields
+//    struct sigaction sigAlarm_{}; // Initialize all the fields
     sigAlarm_.sa_handler = timerHandlerGlobal; // Assign the first field of sigAlarm (sa_handler) as needed, others zeroed
     if (sigaction(SIGVTALRM, &sigAlarm_, nullptr) != 0)
     {
@@ -237,14 +239,16 @@ int Scheduler::blockThread(int tid)
     }
     if (currentRunningThread_ == tid)
     {
+        blockedThreads_.emplace(tid);
         _preempt(PreemptReason::Blocking); // block the running thread
     }
     else // in ready queue
     {
+        blockedThreads_.emplace(tid);
+
         // delete this thread from the ready queue
         _deleteReadyThread(tid);
     }
-    blockedThreads_.emplace(tid); // classify this running/ready thread as blocked
     return EXIT_SUCCESS;
 }
 
