@@ -7,6 +7,7 @@
 #include "thread.h" // Thread object
 #include <utility> // std::piecewise_construct
 #include <tuple> // std::forward_as_tuple
+#include <cstdlib> // std::exit
 
 Scheduler::Scheduler(int quantum_usecs) // map, deque, set and struct are default constructed implicitly
 : currentRunningThread_(0), // main thread(0) initializes the scheduler

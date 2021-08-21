@@ -35,7 +35,7 @@ class Thread
 private:
     int tid_; // Thread id in the range 0-99
     sigjmp_buf env_; // Thread's execution context
-    char* stack_; // Thread's stack represented by an array of STACK_SIZE bytes
+    std::unique_ptr<char[]> stack_; // Thread's stack represented by an array of STACK_SIZE bytes
     int numOfQuantum_; // Number of quantum the thread has occupied the CPU
 public:
     /**
@@ -53,6 +53,8 @@ public:
     // prohibit copying Thread objects
     Thread(const Thread&) = delete;
     Thread operator=(const Thread&) = delete;
+    Thread(const Thread&&) = delete;
+    Thread& operator=(const Thread&&) = delete;
 
     /**
      * @return Thread's ID

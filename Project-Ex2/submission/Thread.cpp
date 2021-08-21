@@ -3,6 +3,7 @@
 //
 #include "thread.h"
 #include <signal.h>
+#include <memory>
 
 #ifdef __x86_64__ // Pre-defined compiler macro ($ echo | gcc -E -dM -)
 /* code for 64 bit Intel arch */
@@ -49,7 +50,7 @@ Thread::Thread(int id, void (*f)())
      * stack base address (sp) and an entry point (f).
      * Note: each thread holds its stack on the heap section. */
     address_t sp, pc;
-    sp = (address_t)stack_ + STACK_SIZE - sizeof(address_t);
+    sp = (address_t)stack_.get() + STACK_SIZE - sizeof(address_t);
     pc = (address_t)f;
 
     /** Define an execution context for the thread, enabling signal-handling as well.
