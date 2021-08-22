@@ -1,0 +1,23 @@
+AddressSanitizer:DEADLYSIGNAL
+=================================================================
+==15766==ERROR: AddressSanitizer: SEGV on unknown address 0x0000000000c4 (pc 0x564ace50225b bp 0x7ffe0b8f0b70 sp 0x7ffe0b8f0b60 T0)
+==15766==The signal is caused by a READ memory access.
+==15766==Hint: address points to the zero page.
+    #0 0x564ace50225a in Scheduler::_deleteTerminatedThread() /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/Sc
+heduler.cpp:137
+    #1 0x564ace5022ec in Scheduler::timerHandler(int) /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/Scheduler.
+cpp:148
+    #2 0x564ace4fe233 in timerHandlerGlobal(int) /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/uthreads.cpp:79
+    #3 0x7f326b7d63bf  (/lib/x86_64-linux-gnu/libpthread.so.0+0x153bf)
+    #4 0x7f326b71177f  (/lib/x86_64-linux-gnu/libstdc++.so.6+0x13277f)
+    #5 0x7f326b69a935 in std::ios_base::Init::~Init() (/lib/x86_64-linux-gnu/libstdc++.so.6+0xbb935)
+    #6 0x7f326b2cca26  (/lib/x86_64-linux-gnu/libc.so.6+0x49a26)
+    #7 0x7f326b2ccbdf in exit (/lib/x86_64-linux-gnu/libc.so.6+0x49bdf)
+    #8 0x7f326b2aa0b9 in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x270b9)
+    #9 0x564ace4a5ffd in _start (/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/cmake-build-debug/tests/theTest
+s+0xaeffd)
+
+AddressSanitizer can not provide additional info.
+SUMMARY: AddressSanitizer: SEGV /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/Scheduler.cpp:137 in Scheduler::
+_deleteTerminatedThread()
+==15766==ABORTING

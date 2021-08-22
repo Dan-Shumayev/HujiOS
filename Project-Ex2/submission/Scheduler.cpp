@@ -56,12 +56,11 @@ int Scheduler::_getLowestAvailableId() const
 {
     for (int tid = 1; tid <= (int)threads_.size(); ++tid)
     {
-        if (threads_.find(tid) == threads_.end()) // Indicating no such element (thread with this tid)
+        if (tid < MAX_THREAD_NUM && threads_.find(tid) == threads_.end()) // Indicating no such element (thread with this tid)
         {
             return tid;
         }
     }
-
     return EXIT_FAIL;
 }
 
@@ -104,6 +103,7 @@ void Scheduler::_preempt(PreemptReason preemptReason)
     if (preemptReason == PreemptReason::Termination)
     {
         tidToTerminate_ = preemptedThreadId;
+
         // the thread being terminated will be deleted from memory only once
         // we have jumped to the next thread, using the uthread library's functions
         siglongjmp(nextThread.get_env(), 1);
@@ -128,6 +128,7 @@ void Scheduler::_deleteReadyThread(int tid)
         if (*threadIt == tid) // iterator de-reference
         {
             readyQueue_.erase(threadIt);
+            tidToTerminate_ = tid;
         }
     }
 }
@@ -176,6 +177,7 @@ int Scheduler::spawnThread(threadEntryPoint function)
     threads_.emplace(std::piecewise_construct,
                      std::forward_as_tuple(nextTid),
                      std::forward_as_tuple(nextTid, function));
+
     readyQueue_.emplace_back(nextTid); // Inserted to the end of ready threads
 
     return nextTid;
