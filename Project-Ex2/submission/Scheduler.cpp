@@ -8,6 +8,7 @@
 #include <utility> // std::piecewise_construct
 #include <tuple> // std::forward_as_tuple
 #include <cstdlib> // std::exit
+#include <algorithm> // std::remove
 
 Scheduler::Scheduler(int quantum_usecs) // map, deque, set and struct are default constructed implicitly
 : currentRunningThread_(0), // main thread(0) initializes the scheduler
@@ -123,14 +124,17 @@ void Scheduler::_preempt(PreemptReason preemptReason)
 
 void Scheduler::_deleteReadyThread(int tid)
 {
-    for (auto threadIt = readyQueue_.begin(); threadIt != readyQueue_.end(); ++threadIt)
-    {
-        if (*threadIt == tid) // iterator de-reference
-        {
-            readyQueue_.erase(threadIt);
-            tidToTerminate_ = tid;
-        }
-    }
+    readyQueue_.erase(
+            std::remove(readyQueue_.begin(), readyQueue_.end(), tid),
+            readyQueue_.end());
+//    for (auto threadIt = readyQueue_.begin(); threadIt != readyQueue_.end(); ++threadIt)
+//    {
+//        if (*threadIt == tid) // iterator de-reference
+//        {
+//            readyQueue_.erase(threadIt);
+//            return;
+//        }
+//    }
 }
 
 void Scheduler::_deleteTerminatedThread() {
@@ -197,12 +201,16 @@ int Scheduler::terminateThread(int tid)
     {
         return uthreadException("Don't terminate a non existent thread");
     }
-    else if (tid == currentRunningThread_)
+    if (mutexLockedByThreadId_ == tid) {
+        mutexTryUnlock();
+    }
+    if (tid == currentRunningThread_)
     {
         _preempt(PreemptReason::Termination);
     }
     else // The thread is blocked/ready - terminate it by only delete it from suitable data structures
     {
+        threads_.erase(tid);
         if (blockedThreads_.erase(tid) == 0 && blockedByMutexThreads_.erase(tid) == 0)
             // not in blocked threads => then in ready
         {
@@ -274,6 +282,11 @@ int Scheduler::resumeThread(int tid)
         blockedThreads_.erase(threadIt);
         readyQueue_.emplace_back(tid);
     }
+    else { // mutex-blocked
+        blockedThreads_.erase(tid);
+        blockedByMutexThreads_.erase(tid);
+        readyQueue_.emplace_back(tid);
+    }
     // is it mutex-blocked? if it's, remain unblocked
     return EXIT_SUCCESS;
 }
@@ -306,11 +319,14 @@ int Scheduler::mutexTryUnlock()
     {
         return uthreadException("can't unlock unlocked mutex");
     }
-
+    if (mutexLockedByThreadId_ != getTid()) {
+        return uthreadException("only the locking thread can unlock its mutex");
+    }
     mutexLockedByThreadId_ = -1; // mutex unlocked
     if (!blockedByMutexThreads_.empty()) // Is there any blocked-by-mutex-thread?
     {
         int threadIdToLockMutex = *(blockedByMutexThreads_.begin()); // pick an arbitrary thread to lock the mutex
+        mutexLockedByThreadId_ = threadIdToLockMutex;
         resumeThread(threadIdToLockMutex); /** TODO - here we have a mistake. we have to ensure that our
                                                 mutex-blocked thread isn't blocked by uthread_block.
                                                 if it's, then we won't resume it.
@@ -319,8 +335,6 @@ int Scheduler::mutexTryUnlock()
                                                 blockedbythread->unblockbythread /
                                                 blockedbymutex->unlockmutex /
                                                 blockedbyboth->has to be resumed by mutex-unlock and by thread*/
-        blockedThreads_.erase(threadIdToLockMutex);
-        blockedByMutexThreads_.erase(threadIdToLockMutex);
     }
     return EXIT_SUCCESS;
 }
