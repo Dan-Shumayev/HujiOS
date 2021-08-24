@@ -41,7 +41,7 @@ private:
     int tidToTerminate_;
 
     /** threads waiting for the mutex to be unlocked, upon mutex unlocking, one of them becomes READY */
-    std::unordered_set<int> blockedByMutexThreads_;
+    std::deque<int> blockedByMutexThreads_;
 
     /** Accounting information: */
     int total_quantum_;
@@ -86,6 +86,9 @@ private:
 
     /** Looking for possible thread to be terminated from previous execution context, if exists - deleting it */
     void _deleteTerminatedThread();
+
+    /** Two overloads to overcome the impossibility to define default argument that equals to non-static member field */
+    int mutexTryLock(int tid);
 public:
     // there will be one instance created and the library calls will be forwarded to it
     explicit Scheduler(int quantum_usecs);
