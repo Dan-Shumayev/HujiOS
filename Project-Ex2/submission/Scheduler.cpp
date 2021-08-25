@@ -127,14 +127,6 @@ void Scheduler::_deleteReadyThread(int tid)
     readyQueue_.erase(
             std::remove(readyQueue_.begin(), readyQueue_.end(), tid),
             readyQueue_.end());
-//    for (auto threadIt = readyQueue_.begin(); threadIt != readyQueue_.end(); ++threadIt)
-//    {
-//        if (*threadIt == tid) // iterator de-reference
-//        {
-//            readyQueue_.erase(threadIt);
-//            return;
-//        }
-//    }
 }
 
 void Scheduler::_deleteTerminatedThread() {
@@ -246,7 +238,6 @@ int Scheduler::blockThread(int tid)
     {
         return uthreadException("Can't block main thread");
     }
-//    Thread& threadToBlock = threads_[tid]; // TODO - consider using it
     if (blockedThreads_.find(tid) != blockedThreads_.end()) // already blocked -> no-operation required
     {
         return EXIT_SUCCESS;
@@ -278,7 +269,6 @@ int Scheduler::resumeThread(int tid)
     {
         return EXIT_SUCCESS;
     }
-//    auto threadIt = blockedByMutexThreads_.find(tid);
     if (std::find(blockedByMutexThreads_.begin(), blockedByMutexThreads_.end(), tid)
                                                                                         == blockedByMutexThreads_.end())
     {
@@ -319,7 +309,7 @@ int Scheduler::mutexTryLock(int tid)
     }
     // here the thread has to be blocked because of the mutex locked
     blockedByMutexThreads_.emplace_back(tid); // it may be called again upon mutex unlocking
-    blockThread(tid);
+    _preempt(PreemptReason::Blocking);
 
     return EXIT_SUCCESS;
 }
@@ -334,8 +324,12 @@ int Scheduler::mutexTryUnlock()
     if (mutexLockedByThreadId_ != getTid()) {
         return uthreadException("only the locking thread can unlock its mutex");
     }
-
     mutexLockedByThreadId_ = -1; // mutex unlocked
+    next_thread_to_lock_mutex_();
+    return EXIT_SUCCESS;
+}
+
+void Scheduler::next_thread_to_lock_mutex_() {
     if (!blockedByMutexThreads_.empty()) // Is there any blocked-by-mutex-thread?
     {
         auto uppermost_not_blocked_thread = std::find_if(blockedByMutexThreads_.begin(),
@@ -343,18 +337,11 @@ int Scheduler::mutexTryUnlock()
                                                          [this](int threadId)
                                                          { return blockedThreads_.count(threadId) == 0; });
 
-//        int threadIdToLockMutex = blockedByMutexThreads_.front(); // pick the next thread to lock the mutex
         if (uppermost_not_blocked_thread != blockedByMutexThreads_.end()) {
             mutexLockedByThreadId_ = *uppermost_not_blocked_thread;
             blockedByMutexThreads_.erase(uppermost_not_blocked_thread);
 
-            resumeThread(mutexLockedByThreadId_); /** TODO - here we have a mistake.
-                                                        blockedbythread / blockedbymutex / blockedbyboth.
-                                                        We release a thread:
-                                                        blockedbythread -> unblockbythread /
-                                                        blockedbymutex -> unlockmutex /
-                                                        blockedbyboth -> has to be resumed by mutex-unlock and by thread */
+            readyQueue_.emplace_back(mutexLockedByThreadId_);
         }
     }
-    return EXIT_SUCCESS;
 }

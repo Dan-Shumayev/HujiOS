@@ -89,6 +89,9 @@ private:
 
     /** Two overloads to overcome the impossibility to define default argument that equals to non-static member field */
     int mutexTryLock(int tid);
+
+    void next_thread_to_lock_mutex_();
+
 public:
     // there will be one instance created and the library calls will be forwarded to it
     explicit Scheduler(int quantum_usecs);
@@ -158,6 +161,7 @@ public:
      * Tries unlocking the mutex.
      */
     int mutexTryUnlock();
+
 };
 
 /**
