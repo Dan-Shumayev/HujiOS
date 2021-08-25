@@ -1,0 +1,97 @@
+Running main() from /home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/cmake-build-debug/tests/googletest-src/googletest/src/gtest_main.cc
+Note: Google Test filter = Test*
+[==========] Running 15 tests from 15 test suites.
+[----------] Global test environment set-up.
+[----------] 1 test from Test1
+[ RUN      ] Test1.BasicFunctionality
+==21348==WARNING: ASan is ignoring requested __asan_handle_no_return: stack top: 0x7ffd17dc8000; bottom 0x629000002000; size: 0x1d6d17dc6000 (32354388959232)
+False positive error reports may follow
+For details see https://github.com/google/sanitizers/issues/189
+[       OK ] Test1.BasicFunctionality (2543 ms)
+[----------] 1 test from Test1 (2543 ms total)
+
+[----------] 1 test from Test2
+[ RUN      ] Test2.ThreadSchedulingWithTermination
+[       OK ] Test2.ThreadSchedulingWithTermination (37 ms)
+[----------] 1 test from Test2 (37 ms total)
+
+[----------] 1 test from Test3
+[ RUN      ] Test3.ThreadExecutionOrder
+[       OK ] Test3.ThreadExecutionOrder (17368 ms)
+[----------] 1 test from Test3 (17368 ms total)
+
+[----------] 1 test from Test4
+[ RUN      ] Test4.StressTestAndThreadCreationOrder
+[       OK ] Test4.StressTestAndThreadCreationOrder (8281 ms)
+[----------] 1 test from Test4 (8281 ms total)
+
+[----------] 1 test from Test6
+[ RUN      ] Test6.RandomThreadOperations
+[       OK ] Test6.RandomThreadOperations (16 ms)
+[----------] 1 test from Test6 (16 ms total)
+
+[----------] 1 test from Test7
+[ RUN      ] Test7.MutexTest1
+[       OK ] Test7.MutexTest1 (935 ms)
+[----------] 1 test from Test7 (935 ms total)
+
+[----------] 1 test from Test8
+[ RUN      ] Test8.MutexTest2
+thread library error: the thread locking the mutex wants to re-lock it
+[       OK ] Test8.MutexTest2 (14123 ms)
+[----------] 1 test from Test8 (14123 ms total)
+
+[----------] 1 test from Test9
+[ RUN      ] Test9.MutexTest3
+[       OK ] Test9.MutexTest3 (4154 ms)
+[----------] 1 test from Test9 (4154 ms total)
+
+[----------] 1 test from Test10
+[ RUN      ] Test10.MutexTest4
+[       OK ] Test10.MutexTest4 (805 ms)
+[----------] 1 test from Test10 (805 ms total)
+
+[----------] 1 test from Test11
+[ RUN      ] Test11.MutexTest5
+thread library error: only the locking thread can unlock its mutex
+thread library error: can't unlock unlocked mutex
+[       OK ] Test11.MutexTest5 (12736 ms)
+[----------] 1 test from Test11 (12736 ms total)
+
+[----------] 1 test from Test12
+[ RUN      ] Test12.MutexTest6
+[       OK ] Test12.MutexTest6 (1199 ms)
+[----------] 1 test from Test12 (1199 ms total)
+
+[----------] 1 test from Test13
+[ RUN      ] Test13.MutexTest7
+[       OK ] Test13.MutexTest7 (911 ms)
+[----------] 1 test from Test13 (911 ms total)
+
+[----------] 1 test from Test14
+[ RUN      ] Test14.MutexTest8
+/home/dan-os/CLionProjects/OSProjects/HujiOS/Project-Ex2/submission/tests/tests_to_be_ran_separately.cpp:971: Failure
+Value of: ran
+  Actual: false
+Expected: true
+[  FAILED  ] Test14.MutexTest8 (748 ms)
+[----------] 1 test from Test14 (748 ms total)
+
+[----------] 1 test from Test15
+[ RUN      ] Test15.MutexTest9
+thread library error: only the locking thread can unlock its mutex
+[       OK ] Test15.MutexTest9 (307 ms)
+[----------] 1 test from Test15 (307 ms total)
+
+[----------] 1 test from Test16
+[ RUN      ] Test16.MutexTest10
+[       OK ] Test16.MutexTest10 (619 ms)
+[----------] 1 test from Test16 (620 ms total)
+
+[----------] Global test environment tear-down
+[==========] 15 tests from 15 test suites ran. (64791 ms total)
+[  PASSED  ] 14 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] Test14.MutexTest8
+
+ 1 FAILED TEST
