@@ -751,7 +751,6 @@ TEST(Test11, MutexTest5)
     threadQuantumSleep(1);
     threadQuantumSleep(1);
 
-
     // both treads needs to run
     EXPECT_TRUE(ran && ran2);
 
@@ -798,7 +797,7 @@ TEST(Test12, MutexTest6)
         EXPECT_EQ(uthread_mutex_lock(),0);
 
         // tries to block a thread
-        EXPECT_EQ(uthread_block(3),0);
+        EXPECT_EQ(uthread_block(3),0); // here thread 3 is blocked both by mutex and by regular blocking triggered by 2
 
         ran = true;
 
@@ -844,10 +843,7 @@ TEST(Test12, MutexTest6)
     threadQuantumSleep(1);
     threadQuantumSleep(1);
 
-
     EXPECT_TRUE(ran && ran2);
-
-
 
     ASSERT_EXIT(uthread_terminate(0), ::testing::ExitedWithCode(0), "");
 }
