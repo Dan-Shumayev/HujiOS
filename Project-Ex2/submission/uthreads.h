@@ -7,7 +7,7 @@
  */
 
 #define MAX_THREAD_NUM 100 /* maximal number of threads */
-#define STACK_SIZE 16384 /* stack size per thread (in bytes) */ // TODO - change it back to 4092
+#define STACK_SIZE 4092 /* stack size per thread (in bytes) */
 
 /* External interface */
 
