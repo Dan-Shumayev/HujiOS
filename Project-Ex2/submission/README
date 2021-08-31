@@ -1,18 +1,135 @@
 dans
-207050691
+Dan Shumayev (207050691)
 EX: 2
+
+FILES:
+README - This file.
+Makefile - Build file, the default rule makes the entire library.
+uthreads.h/cpp       - The provided thread library interface, implemented
+                       by delegating to various methods of the thread manager.
+Scheduler.h/cpp - The main module, this is a singleton class that
+                      manages the threads
+thread.h/cpp - Contains some of the thread's housekeeping information
+               such as its id, as well as env and stack.
+uthread_utilities.h/cpp   - Contains some utility functionality and black box code
+uthread_exception.h/cpp     - Contains some error related functionality
+
+REMARKS:
+
+- All library functions (except the simple getters) are masked,
+  this was implemented by the 'SigGuard' class which uses the
+  RAII idiom (similar to lock_guard) to mask the function's scope,
+  except for the case of the preempt alarm handler, which was
+  automatically masked due to 'sigaction' behavior
+
+- All library functions+signal handler are guarded against exceptions, via the 'handleExceptions' function, this is done
+  to catch C++ style allocation exceptions (that may occur when allocating threads or moving them between data
+  structures) to 'system errors' as defined in the exercise. Besides that, most
+  error handling is done manually, using the 'systemError' and 'threadLibraryError' functions.
+
+- Deletion of the current thread requires some trickery, because doing so in the stack frame
+  of the current thread is undefined
+  One could think to do so right after sigsetjmp == 0, but this doesn't handle the case where we jump to a thread in
+  the first time. One could so right before sigsetjmp, but again, this function might happen to accidentally allocate
+  memory on the current stack(marked as free).
+  Therefore, I've opted to deal with this by killing it from another thread, at the earliest possible time
+  (next manual thread library call/next preemption)
 
 ANSWERS:
 
+1. Question:
+   Describe one general use of user-level threads and explain
+   why they're a reasonable choice for your example
 
- Assignment 1:
+   Answer:
+   One usecase is simulating entities in a video    game (players, physical objects,
+   etc..) An entity can be seen as running some kind of infinite loop, reacting
+   to various events triggered by other entities - e.g, physics, AI, game logic,
+   so we'd have a thread for each entity. (Or alternatively, tasks/coroutines,
+   which are abstractions that can be implemented via user threads)
 
-	Code attached with. The code is heavily commented.
+   Since we might have thousands of such entities(threads), it is impractical to
+   map each kernel thread to each entity as both the memory overhead as well as
+   well as the cost of context switches would be too large. Moreover, using
+   threads brings issues of synchronization which can be difficult to deal with.
 
- Assignment 2:
+   Not using threads at all would require some kind of state machine, which might
+   be difficult to maintain from a programming standpoint.
 
-1. It avoids the overhead that accompanies kernel-level threads which are managed by the kernel. The disadvantage of such multi-threading is that the kernel has to handle the scheduling of the threads, and actually the entire state machine. As mentioned, it includes many system calls which causes trap, which is an overhead we've seen in Ex.1.
+2. Advantages and disadvantages of using processes rather than kernel threads
+   for Google Chrome
+   Advantages:
+   + Protection: A rogue website might try to exploit bugs in the browser, such
+                 as buffer overflow, in order to obtain sensitive information
+                 from other websites (e.g your bank session). If the information
+                 lays on a single address space(1 process, multithreaded
+                 approach), this would be relatively easy. However, if each
+                 website is on a different process, then not only he'd have to
+                 exploit the browser, but also exploit the OS virtual memory,
+                 which would be much harder.
 
-2. Advantage: if one tab fails for some reason and is supposed to be halted, the other ones will continue as usual, because process are independent entities. Disadvantage: Each process occupies lots of data, and requires its own stack. Moreover, in order to choose a different tab, a context-switch is needed which is expensive also.
+  + User experience:
+                A website or browser plugin might crash or hang. On a
+                multi-process browser, this would only affect said tab/plugin,
+                and the rest of the browser could function normally, as well as
+                try to recover from the crash and restart the tab/plugin.
 
-3.
+
+  Disadvantages:
+  - Memory overhead:
+               Opening a lot of tabs results in the creation of many processes,
+               which take a lot more memory compared to using threads
+
+
+  - CPU overhead:
+               Different processes associated with the browser still need to
+               communicate with each other, and such communication is much
+               slower than that done by threads that use shared memory.
+
+3. Explanation about interrupts and signals involved:
+   1. As I type the command to the shell, the keyboard generates hardware
+      interrupts via its controller, these go to the processor which stops
+      what it's doing, and finds the OS routine to deal with the interrupt
+      by inspecting the interrupt vector, and jumps to it (in kernel mode)
+      The OS routine reads the keys that were pressed(either directly from
+      the keyboard's memory via DMA or from the interrupt request itself)
+
+   2. Said OS routine determines that we've been typing to the shell(as it has
+      focus) and writes the characters we've been typing to the STDIN file that
+      the shell has open and is blocking on, via the 'write' syscall.
+
+      The shell is using 'select' to be notified of new characters that arrive to STDIN,
+      and then uses 'read' to read those specific characters. This is different from just
+      reading the entire STDIN file, since it doesn't have to wait for the STDIN file
+      to be closed(which would only happen when we terminate the shell, not something
+      we want) thus allowing the shell to be interactive.
+
+      The shell also writes those same characters to STDOUT.
+
+   3. Once a newline is read, the shell will send a SIGTERM signal to the selected process
+      via the 'kill' system call.
+      Note - kill is a shell builtin, and doesn't involve the creation of a new
+      process unlike most commands.
+
+   4. Since no special handler was specified for SIGTERM, the default signal
+      handler chooses to terminate the chosen program. This causes it to
+      emit SIGCHLD to its parent
+
+4. Difference between real/virtual time, give an example of using each.
+
+   Virtual time is the time spent by the CPU executing the process's
+   instructions, and doesn't include the time of the syscalls themselves
+   or times during which the process was non-resident, which are included
+   in real time.
+
+   As seen in the exercise, virtual time is useful for assigning each
+   user-thread a constant amount of time, that doesn't fluctuate depending on
+   system load
+
+   Real time can be used whenever we care about the human concept of time, for
+   example, in a scheduling app.
+
+   An example that uses both times: if your program takes very
+   long (real time) but a time command indicates a very low virtual time, this
+   indicates that there's an IO bottleneck in the program(e.g heavy memory swapping
+   when your program runs out of physical RAM)
