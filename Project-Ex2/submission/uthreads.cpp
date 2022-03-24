@@ -54,6 +54,11 @@ int uthread_resume(int tid)
     return scheduler_manager->resumeThread(tid);
 }
 
+int uthread_sleep(int num_quantums)
+{
+    // TODO - to be implemented
+}
+
 int uthread_get_tid()
 {
     // we aren't masking the timer signal, as this function doesn't affect the library
