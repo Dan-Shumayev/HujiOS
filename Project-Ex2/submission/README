@@ -116,3 +116,7 @@ ANSWERS:
    long (real time) but a time command indicates a very low virtual time, this
    indicates that there's an IO bottleneck in the program (e.g heavy memory swapping
    when your program runs out of physical RAM).
+
+5. Describe what the functions sigsetjmp and siglongjmp do.
+
+   My answer goes here...
