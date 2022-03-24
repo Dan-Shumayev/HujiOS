@@ -5,22 +5,28 @@
 #ifndef PROJECT_EX2_SCHEDULER_H
 #define PROJECT_EX2_SCHEDULER_H
 
-#include "thread.h" // User-Thread class
-#include <signal.h> // sigaction, sigset_t
-#include <sys/time.h> // itimerval
+#include "thread.h"      // User-Thread class
+#include <signal.h>      // sigaction, sigset_t
+#include <sys/time.h>    // itimerval
 #include <unordered_map> // std::unordered_map
-#include <deque> // std::deque
+#include <deque>         // std::deque
 #include <unordered_set> // std::unordered_set
-
 
 /**
  * Round-Robin scheduler for user-level threads.
  * This class is a singleton.
  */
-class Scheduler {
+class Scheduler
+{
 public:
     /** Enumerate a thread's execution state */
-    enum class PreemptReason { Termination, QuantumExpiration, Blocking };
+    enum class PreemptReason
+    {
+        Termination,
+        QuantumExpiration,
+        Blocking
+    };
+
 private:
     /** Thread control structures: */
 
@@ -97,8 +103,8 @@ public:
     explicit Scheduler(int quantum_usecs);
 
     // prohibit copying Scheduler objects
-    Scheduler(const Scheduler&) = delete;
-    Scheduler operator=(const Scheduler&) = delete;
+    Scheduler(const Scheduler &) = delete;
+    Scheduler operator=(const Scheduler &) = delete;
 
     /** Spawns a new thread at the end of the ready queue
      * @param function Thread entry function
@@ -117,12 +123,12 @@ public:
     /**
      * @return ID of the calling (currently running) thread
      */
-    inline int getTid() const {return currentRunningThread_;}
+    inline int getTid() const { return currentRunningThread_; }
 
     /**
-    * @return Total number of quantums that occupied the CPU so far
-    */
-    inline int getTotalQuantums() const {return total_quantum_;}
+     * @return Total number of quantums that occupied the CPU so far
+     */
+    inline int getTotalQuantums() const { return total_quantum_; }
 
     /**
      * @param tid Thread ID
@@ -155,13 +161,12 @@ public:
     /**
      * Tries locking the mutex in order to perform a critical section.
      */
-    int mutexTryLock();
+    // int mutexTryLock();
 
     /**
      * Tries unlocking the mutex.
      */
     int mutexTryUnlock();
-
 };
 
 /**
@@ -170,5 +175,4 @@ public:
  */
 void timerHandlerGlobal(int signo);
 
-
-#endif //PROJECT_EX2_SCHEDULER_H
+#endif // PROJECT_EX2_SCHEDULER_H

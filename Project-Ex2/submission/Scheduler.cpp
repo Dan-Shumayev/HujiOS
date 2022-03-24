@@ -4,19 +4,19 @@
 
 #include "Scheduler.h"
 #include "uthreads.h" // MAX_THREAD_NUM
-#include "thread.h" // Thread object
-#include <utility> // std::piecewise_construct
-#include <tuple> // std::forward_as_tuple
-#include <cstdlib> // std::exit
-#include <algorithm> // std::remove
+#include "thread.h"   // Thread object
+#include <utility>    // std::piecewise_construct
+#include <tuple>      // std::forward_as_tuple
+#include <cstdlib>    // std::exit
+#include <algorithm>  // std::remove
 
 Scheduler::Scheduler(int quantum_usecs) // map, deque, set and struct are default constructed implicitly
-: currentRunningThread_(0), // main thread(0) initializes the scheduler
-    tidToTerminate_(-1), // -1 indicates no thread is supposed to be terminated
-    total_quantum_(0),
-    sigAlarm_(),
-    mutexLockedByThreadId_(-1),
-  threadQuantum_(quantum_usecs)
+    : currentRunningThread_(0),         // main thread(0) initializes the scheduler
+      tidToTerminate_(-1),              // -1 indicates no thread is supposed to be terminated
+      total_quantum_(0),
+      sigAlarm_(),
+      mutexLockedByThreadId_(-1),
+      threadQuantum_(quantum_usecs)
 {
     /** Insert the main thread into the entire collection of concurrent threads,
     Assuming no element with this ID in threads_. using piecewise_construct because it's not copyable
@@ -26,12 +26,12 @@ Scheduler::Scheduler(int quantum_usecs) // map, deque, set and struct are defaul
                      std::forward_as_tuple(0),
                      std::forward_as_tuple());
 
-    Thread& main = threads_[0];
+    Thread &main = threads_[0];
     main.incrementNumOfQuantum(); // First quantum occupied by the main thread
-    total_quantum_++; // Total quantum
+    total_quantum_++;             // Total quantum
 
     // set timer handler
-//    struct sigaction sigAlarm_{}; // Initialize all the fields
+    //    struct sigaction sigAlarm_{}; // Initialize all the fields
     sigAlarm_.sa_handler = timerHandlerGlobal; // Assign the first field of sigAlarm (sa_handler) as needed, others zeroed
     if (sigaction(SIGVTALRM, &sigAlarm_, nullptr) != 0)
     {
@@ -46,7 +46,7 @@ Scheduler::Scheduler(int quantum_usecs) // map, deque, set and struct are defaul
 
 void Scheduler::_setTimerSignal(int quantum_usecs)
 {
-    itimerval timer = { {0, quantum_usecs}, {0, quantum_usecs} };
+    itimerval timer = {{0, quantum_usecs}, {0, quantum_usecs}};
     if (setitimer(ITIMER_VIRTUAL, &timer, nullptr) != 0)
     {
         uthreadSystemException("setittimer");
@@ -80,7 +80,7 @@ void Scheduler::_preempt(PreemptReason preemptReason)
     int preemptedThreadId = currentRunningThread_;
 
     // Assumption: the readyQueue_ is never empty
-    Thread& nextThread = threads_[readyQueue_.front()]; // By-reference, avoiding copy-ctr
+    Thread &nextThread = threads_[readyQueue_.front()]; // By-reference, avoiding copy-ctr
     readyQueue_.pop_front();
 
     currentRunningThread_ = nextThread.get_id();
@@ -88,7 +88,7 @@ void Scheduler::_preempt(PreemptReason preemptReason)
     nextThread.incrementNumOfQuantum();
 
     if (preemptedThreadId == nextThread.get_id()) // In case only main thread exists,
-                                                    // and no other thread spawned so far
+                                                  // and no other thread spawned so far
     {
         // No need to jump (siglongjmp), because given this branch it implies we never jumped from main thread
         // to another one, so main thread's env is zero (either way, it's an optimization)
@@ -111,7 +111,7 @@ void Scheduler::_preempt(PreemptReason preemptReason)
     }
     else // Quantum expired OR Blocked
     {
-        Thread& previousThread = threads_[preemptedThreadId]; // assumed that there's a thread with this ID
+        Thread &previousThread = threads_[preemptedThreadId]; // assumed that there's a thread with this ID
         if (sigsetjmp(previousThread.get_env(), 1) != 0)
         {
             // if we're here, we jumped back to previousThread, so let's resume its execution
@@ -125,11 +125,12 @@ void Scheduler::_preempt(PreemptReason preemptReason)
 void Scheduler::_deleteReadyThread(int tid)
 {
     readyQueue_.erase(
-            std::remove(readyQueue_.begin(), readyQueue_.end(), tid),
-            readyQueue_.end());
+        std::remove(readyQueue_.begin(), readyQueue_.end(), tid),
+        readyQueue_.end());
 }
 
-void Scheduler::_deleteTerminatedThread() {
+void Scheduler::_deleteTerminatedThread()
+{
     if (tidToTerminate_ != -1) // is there a thread to terminate?
     {
         threads_.erase(tidToTerminate_);
@@ -194,7 +195,8 @@ int Scheduler::terminateThread(int tid)
     {
         return uthreadException("Don't terminate a non existent thread");
     }
-    if (mutexLockedByThreadId_ == tid) {
+    if (mutexLockedByThreadId_ == tid)
+    {
         mutexTryUnlock();
     }
     if (tid == currentRunningThread_)
@@ -208,7 +210,7 @@ int Scheduler::terminateThread(int tid)
         auto original_end = blockedByMutexThreads_.end();
         blockedByMutexThreads_.erase(new_end, original_end);
         if (blockedThreads_.erase(tid) == 0 && new_end == original_end)
-            // not in blocked threads => then in ready
+        // not in blocked threads => then in ready
         {
             _deleteReadyThread(tid);
         }
@@ -223,7 +225,7 @@ int Scheduler::getThreadQuantums(int tid)
     {
         return uthreadException("Can't get quantums of non existent thread");
     }
-    Thread& thread = threads_[tid];
+    Thread &thread = threads_[tid];
     return thread.get_quantum_running();
 }
 
@@ -265,21 +267,22 @@ int Scheduler::resumeThread(int tid)
         return uthreadException("Can't resume non existent thread");
     }
     auto threadIterator = blockedThreads_.find(tid); // store it in case we'll erase it from blocked set
-    if (threadIterator == blockedThreads_.end()) // not blocked thread => no-operation
+    if (threadIterator == blockedThreads_.end())     // not blocked thread => no-operation
     {
         return EXIT_SUCCESS;
     }
-    if (std::find(blockedByMutexThreads_.begin(), blockedByMutexThreads_.end(), tid)
-                                                                                        == blockedByMutexThreads_.end())
+    if (std::find(blockedByMutexThreads_.begin(), blockedByMutexThreads_.end(), tid) == blockedByMutexThreads_.end())
     {
         // it's not mutex-blocked, then delete it from blocked threads and queue it to the ready threads
         auto threadIt = blockedThreads_.find(tid);
         blockedThreads_.erase(threadIt);
         readyQueue_.emplace_back(tid);
     }
-    else { // mutex-blocked
+    else
+    { // mutex-blocked
         blockedThreads_.erase(tid);
-        if (mutexLockedByThreadId_ == -1) {
+        if (mutexLockedByThreadId_ == -1)
+        {
             mutexLockedByThreadId_ = tid;
             readyQueue_.emplace_back(tid);
         }
@@ -288,11 +291,11 @@ int Scheduler::resumeThread(int tid)
     return EXIT_SUCCESS;
 }
 
-int Scheduler::mutexTryLock()
-{
-    // call the version with a thread ID
-    return mutexTryLock(currentRunningThread_);
-}
+// int Scheduler::mutexTryLock()
+// {
+//     // call the version with a thread ID
+//     return mutexTryLock(currentRunningThread_);
+// }
 
 int Scheduler::mutexTryLock(int tid)
 {
@@ -321,7 +324,8 @@ int Scheduler::mutexTryUnlock()
     {
         return uthreadException("can't unlock unlocked mutex");
     }
-    if (mutexLockedByThreadId_ != getTid()) {
+    if (mutexLockedByThreadId_ != getTid())
+    {
         return uthreadException("only the locking thread can unlock its mutex");
     }
     mutexLockedByThreadId_ = -1; // mutex unlocked
@@ -329,7 +333,8 @@ int Scheduler::mutexTryUnlock()
     return EXIT_SUCCESS;
 }
 
-void Scheduler::next_thread_to_lock_mutex_() {
+void Scheduler::next_thread_to_lock_mutex_()
+{
     if (!blockedByMutexThreads_.empty()) // Is there any blocked-by-mutex-thread?
     {
         auto uppermost_not_blocked_thread = std::find_if(blockedByMutexThreads_.begin(),
@@ -337,7 +342,8 @@ void Scheduler::next_thread_to_lock_mutex_() {
                                                          [this](int threadId)
                                                          { return blockedThreads_.count(threadId) == 0; });
 
-        if (uppermost_not_blocked_thread != blockedByMutexThreads_.end()) {
+        if (uppermost_not_blocked_thread != blockedByMutexThreads_.end())
+        {
             mutexLockedByThreadId_ = *uppermost_not_blocked_thread;
             blockedByMutexThreads_.erase(uppermost_not_blocked_thread);
 
