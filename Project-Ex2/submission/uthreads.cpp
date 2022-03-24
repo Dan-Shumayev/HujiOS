@@ -2,9 +2,9 @@
 // Created by dan-os on 31/05/2021.
 //
 
-#include "uthreads.h" // Library API
+#include "uthreads.h"          // Library API
 #include "uthread_utilities.h" // Masking
-#include "Scheduler.h" // Scheduler, SIGVTALRM
+#include "Scheduler.h"         // Scheduler, SIGVTALRM
 
 /** Has to be global as any function may use the scheduler. Smart pointer as a wrapper */
 std::unique_ptr<Scheduler> scheduler_manager = nullptr;
@@ -12,19 +12,19 @@ std::unique_ptr<Scheduler> scheduler_manager = nullptr;
 /** Assumption: this function is the first called function */
 int uthread_init(int quantum_usecs)
 {
-   if (quantum_usecs < 1)
-   {
-       return uthreadException("Quantum must be positive");
-   }
+    if (quantum_usecs < 1)
+    {
+        return uthreadException("Quantum must be positive");
+    }
 
-   /** Scheduling initialization part */
-   // mask timer preemption to prevent interruption of the initialization process
-   SigMask timer_mask(SIGVTALRM);
-   auto scheduler_init = new Scheduler(quantum_usecs); // pointer to Scheduler object
-   scheduler_manager = std::unique_ptr<Scheduler>(scheduler_init); // the pointer is copied and not the
-   // object itself, so no problem of copy-ctr
+    /** Scheduling initialization part */
+    // mask timer preemption to prevent interruption of the initialization process
+    SigMask timer_mask(SIGVTALRM);
+    auto scheduler_init = new Scheduler(quantum_usecs);             // pointer to Scheduler object
+    scheduler_manager = std::unique_ptr<Scheduler>(scheduler_init); // the pointer is copied and not the
+    // object itself, so no problem of copy-ctr
 
-   return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 
 int uthread_spawn(void (*f)())
@@ -79,15 +79,14 @@ void timerHandlerGlobal(int signo)
     scheduler_manager->timerHandler(signo);
 }
 
-int uthread_mutex_lock()
-{
-    SigMask timer_mask(SIGVTALRM);
-    return scheduler_manager->mutexTryLock();
-}
+// int uthread_mutex_lock()
+// {
+//     SigMask timer_mask(SIGVTALRM);
+//     return scheduler_manager->mutexTryLock();
+// }
 
-int uthread_mutex_unlock()
-{
-    SigMask timer_mask(SIGVTALRM);
-    return scheduler_manager->mutexTryUnlock();
-}
-
+// int uthread_mutex_unlock()
+// {
+//     SigMask timer_mask(SIGVTALRM);
+//     return scheduler_manager->mutexTryUnlock();
+// }

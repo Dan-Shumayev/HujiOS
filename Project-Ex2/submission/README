@@ -34,7 +34,7 @@ REMARKS:
   Therefore, I've opted to deal with this by killing it from another thread, at the earliest possible time
   (next manual thread library call/next preemption)
 
-ANSWERS:
+Theoretical part - answers:
 
 1. Question:
    Describe one general use of user-level threads and explain why they're a reasonable choice for your example.
