@@ -148,7 +148,7 @@ void Scheduler::timerHandler(int signo)
         return;
     }
 
-    if (!sleepThreads_.empty() && (*sleepThreads_.begin()).second <= total_quantum_) // TODO - to be tested
+    if (!sleepThreads_.empty() && (*sleepThreads_.begin()).second < total_quantum_) // TODO - to be tested
     {
         auto it = sleepThreads_.begin();
         readyQueue_.emplace_back((*it).first);
@@ -304,7 +304,7 @@ int Scheduler::resumeThread(int tid)
     int sleepUntil = currThread.getSleepUntil();
     if (currThread.getSleepUntil() != -1)
     {
-        if (sleepUntil <= total_quantum_)
+        if (sleepUntil < total_quantum_)
         {
             readyQueue_.emplace_back(tid);
         }
