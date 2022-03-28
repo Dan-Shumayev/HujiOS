@@ -6,10 +6,21 @@
 #define PROJECT_EX2_UTHREAD_UTILITIES_H
 
 #include <signal.h>
+#include <utility>
 
 using threadEntryPoint = void(*)();
 
+using TidToSleepTime = std::pair<int, int>;
+
 const int EXIT_FAIL = -1;
+
+struct cmp
+{
+    bool operator()(const TidToSleepTime &a, const TidToSleepTime &b)
+    {
+        return a.second < b.second;
+    };
+};
 
 /**
  *  When an object of this class in scope, it ensures that given signal is masked

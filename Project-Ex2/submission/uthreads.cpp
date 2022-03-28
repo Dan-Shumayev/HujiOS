@@ -56,7 +56,8 @@ int uthread_resume(int tid)
 
 int uthread_sleep(int num_quantums)
 {
-    // TODO - to be implemented
+    SigMask timer_mask(SIGVTALRM);
+    return scheduler_manager->sleepThread(num_quantums);
 }
 
 int uthread_get_tid()
@@ -83,15 +84,3 @@ void timerHandlerGlobal(int signo)
 {
     scheduler_manager->timerHandler(signo);
 }
-
-// int uthread_mutex_lock()
-// {
-//     SigMask timer_mask(SIGVTALRM);
-//     return scheduler_manager->mutexTryLock();
-// }
-
-// int uthread_mutex_unlock()
-// {
-//     SigMask timer_mask(SIGVTALRM);
-//     return scheduler_manager->mutexTryUnlock();
-// }

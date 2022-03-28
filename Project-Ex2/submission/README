@@ -119,7 +119,6 @@ Theoretical part - answers:
 
 5. Describe what the functions `sigsetjmp` and `siglongjmp` do.
 
-   TODO - Answer goes here...
    `sigsetjmp` - this function receives a `sigjmp_buf` struct variable that is to contain several fields destined to
        hold our the current thread's context (e.g. the  stack pointer, the instruction pointer, possibly the values
                                      of other registers and the signal mask if the second argument passed is nonzero).
