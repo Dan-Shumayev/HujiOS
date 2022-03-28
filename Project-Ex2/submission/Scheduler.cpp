@@ -148,7 +148,7 @@ void Scheduler::timerHandler(int signo)
         return;
     }
 
-    if (!sleepThreads_.empty() && (*sleepThreads_.begin()).second >= total_quantum_) // TODO - to be tested
+    if (!sleepThreads_.empty() && (*sleepThreads_.begin()).second <= total_quantum_) // TODO - to be tested
     {
         auto it = sleepThreads_.begin();
         readyQueue_.emplace_back((*it).first);
