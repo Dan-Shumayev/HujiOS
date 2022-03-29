@@ -148,12 +148,12 @@ void Scheduler::timerHandler(int signo)
         return;
     }
 
-    if (!sleepThreads_.empty() && (*sleepThreads_.begin()).second < total_quantum_) // TODO - to be tested
+    auto end = sleepThreads_.lower_bound({ 0, total_quantum_ }); // TODO - to be tested
+    for(auto it = sleepThreads_.begin(); it != end; ++it)
     {
-        auto it = sleepThreads_.begin();
-        readyQueue_.emplace_back((*it).first);
-        sleepThreads_.erase(it);
-    } // TODO - to be tested till here
+        readyQueue_.emplace_back(it->first);
+    }
+    sleepThreads_.erase(sleepThreads_.begin(), end); // TODO - to be tested till here
 
     readyQueue_.emplace_back(currentRunningThread_);
     _preempt(PreemptReason::QuantumExpiration);
@@ -211,13 +211,8 @@ int Scheduler::terminateThread(int tid)
         // TODO - to be tested
         threads_.erase(tid);
 
-        auto it = find_if(sleepThreads_.begin(), sleepThreads_.end(), [](const TidToSleepTime & p )
-        { return p.first == 0; });
-
-        if (it != sleepThreads_.end())
-        {
-            sleepThreads_.erase(it);
-        }
+        auto it = std::find_if(sleepThreads_.begin(), sleepThreads_.end(), [tid](const TidToSleepTime& p)
+        { return p.first == tid; });
 
         if (blockedThreads_.erase(tid) == 0 && it == sleepThreads_.end())
         // not in sleeping/blocked threads => then in ready

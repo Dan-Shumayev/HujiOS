@@ -11,8 +11,8 @@
 #include <unordered_map> // std::unordered_map
 #include <deque>         // std::deque
 #include <unordered_set> // std::unordered_set
-#include <vector> // std::vector
-#include <set>
+#include <vector>        // std::vector
+#include <set>           // std::multiset
 
 /**
  * Round-Robin scheduler for user-level threads.
@@ -43,7 +43,7 @@ private:
     std::unordered_set<int> blockedThreads_;
 
     /* TODO - comment */
-    std::set<TidToSleepTime, cmp> sleepThreads_;
+    std::multiset<TidToSleepTime, cmp> sleepThreads_;
 
     /** Currently running thread's ID */
     int currentRunningThread_;
