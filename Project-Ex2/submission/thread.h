@@ -7,7 +7,7 @@
 #include <memory> // smart_pointers
 #include "uthreads.h" // STACK_SIZE macro
 #include <setjmp.h> // sigjmp_buf
-#include "uthread_exception.h" // uthreadException, uthreadSystemException
+#include "uthread_utilities.h" // uthreadException, uthreadSystemException
 
 #ifdef __x86_64__ // Pre-defined compiler macro ($ echo | gcc -E -dM -)
 /* code for 64 bit Intel arch */

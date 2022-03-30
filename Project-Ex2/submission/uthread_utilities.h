@@ -7,6 +7,10 @@
 
 #include <signal.h>
 #include <utility>
+#include <cstdlib> // std::exit
+#include <iostream> // std::cerr
+#include <cstring> // std::strerror
+#include <ostream> // std::endl
 
 using threadEntryPoint = void(*)();
 
@@ -21,6 +25,19 @@ struct cmp
         return a.second < b.second;
     };
 };
+
+/**
+ * Prints to cerr a system call error and exits the program
+ * @param msg Error info
+ */
+[[ noreturn ]] void uthreadSystemException(const char* msg);
+
+/**
+ * Prints to cerr an a thread library error and returns -1
+ * @param msg Error info
+ * @return -1 indicating error code
+ */
+int uthreadException(const char* msg);
 
 /**
  *  When an object of this class in scope, it ensures that given signal is masked
