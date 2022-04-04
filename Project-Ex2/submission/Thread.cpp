@@ -38,13 +38,14 @@ address_t translate_address(address_t addr)
 #endif
 
 Thread::Thread()
-: tid_(0), env_{}, stack_(nullptr), numOfQuantum_(0) {}
+: tid_(0), env_{}, stack_(nullptr), numOfQuantum_(0), sleepUntil_(-1) {}
 
 Thread::Thread(int id, void (*f)())
     : tid_(id),
     env_{},
     stack_(new char[STACK_SIZE]),
-    numOfQuantum_(0)
+    numOfQuantum_(0),
+    sleepUntil_(-1)
 {
     /** Initialize the thread's execution context
      * stack base address (sp) and an entry point (f).

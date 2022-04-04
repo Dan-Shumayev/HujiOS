@@ -2,8 +2,8 @@ C=g++
 CXX=g++
 RANLIB=ranlib
 
-LIBH=Scheduler.h uthread_exception.h thread.h uthread_utilities.h
-LIBSRC=Thread.cpp Scheduler.cpp uthreads.cpp uthread_exception.cpp uthread_utilities.cpp
+LIBH=Scheduler.h thread.h uthread_utilities.h
+LIBSRC=Thread.cpp Scheduler.cpp uthreads.cpp uthread_utilities.cpp
 LIBOBJ=$(LIBSRC:.cpp=.o)
 
 INCS=-I.

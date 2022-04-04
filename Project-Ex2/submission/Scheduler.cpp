@@ -8,14 +8,13 @@
 #include <utility>    // std::piecewise_construct
 #include <tuple>      // std::forward_as_tuple
 #include <cstdlib>    // std::exit
-#include <algorithm>  // std::remove
+#include <algorithm>  // std::remove, std::find_if
 
 Scheduler::Scheduler(int quantum_usecs) // map, deque, set and struct are default constructed implicitly
     : currentRunningThread_(0),         // main thread(0) initializes the scheduler
       tidToTerminate_(-1),              // -1 indicates no thread is supposed to be terminated
       total_quantum_(0),
       sigAlarm_(),
-      mutexLockedByThreadId_(-1),
       threadQuantum_(quantum_usecs)
 {
     /** Insert the main thread into the entire collection of concurrent threads,
@@ -148,6 +147,14 @@ void Scheduler::timerHandler(int signo)
         uthreadException("Not the virtual timer signal. SIGVTALRM is required.");
         return;
     }
+
+    auto end = sleepThreads_.lower_bound({ 0, total_quantum_ }); // TODO - to be tested
+    for(auto it = sleepThreads_.begin(); it != end; ++it)
+    {
+        readyQueue_.emplace_back(it->first);
+    }
+    sleepThreads_.erase(sleepThreads_.begin(), end); // TODO - to be tested till here
+
     readyQueue_.emplace_back(currentRunningThread_);
     _preempt(PreemptReason::QuantumExpiration);
 }
@@ -195,25 +202,24 @@ int Scheduler::terminateThread(int tid)
     {
         return uthreadException("Don't terminate a non existent thread");
     }
-    if (mutexLockedByThreadId_ == tid)
-    {
-        mutexTryUnlock();
-    }
     if (tid == currentRunningThread_)
     {
         _preempt(PreemptReason::Termination);
     }
-    else // The thread is blocked/ready - terminate it by only delete it from suitable data structures
+    else // The thread is sleeping/blocked/ready - terminate it by only deleting it from suitable data structures
     {
+        // TODO - to be tested
         threads_.erase(tid);
-        auto new_end = std::remove(blockedByMutexThreads_.begin(), blockedByMutexThreads_.end(), tid);
-        auto original_end = blockedByMutexThreads_.end();
-        blockedByMutexThreads_.erase(new_end, original_end);
-        if (blockedThreads_.erase(tid) == 0 && new_end == original_end)
-        // not in blocked threads => then in ready
+
+        auto it = std::find_if(sleepThreads_.begin(), sleepThreads_.end(), [tid](const TidToSleepTime& p)
+        { return p.first == tid; });
+
+        if (blockedThreads_.erase(tid) == 0 && it == sleepThreads_.end())
+        // not in sleeping/blocked threads => then in ready
         {
             _deleteReadyThread(tid);
         }
+        // TODO - to be tested till here
     }
     return EXIT_SUCCESS;
 }
@@ -244,6 +250,16 @@ int Scheduler::blockThread(int tid)
     {
         return EXIT_SUCCESS;
     }
+    // TODO - to be tested from here
+    // check if this thread is sleeping, thus dequeue from sleeping and queue into block
+    auto it = std::find_if(sleepThreads_.begin(), sleepThreads_.end(), [tid](const TidToSleepTime& p)
+    { return p.first == tid; });
+    if (it != sleepThreads_.end())
+    {
+        blockedThreads_.emplace(tid);
+        sleepThreads_.erase(it);
+    }
+    // TODO - to be tested till here
     if (currentRunningThread_ == tid)
     {
         blockedThreads_.emplace(tid);
@@ -271,83 +287,45 @@ int Scheduler::resumeThread(int tid)
     {
         return EXIT_SUCCESS;
     }
-    if (std::find(blockedByMutexThreads_.begin(), blockedByMutexThreads_.end(), tid) == blockedByMutexThreads_.end())
+
+    // it's blocked (uthreads_block), then delete it from blocked threads and queue it to the ready threads iff it
+    //  doesn't have to sleep
+    blockedThreads_.erase(threadIterator);
+
+    // TODO - to be tested
+    // insert tid thread to readyQueue_ iff its sleepTime <= currentQuantum, otherwise queue it to the sleepQueue_
+    //  which is sorted by each thread's sleepTime
+    Thread &currThread = threads_[tid];
+    int sleepUntil = currThread.getSleepUntil();
+    if (currThread.getSleepUntil() != -1)
     {
-        // it's not mutex-blocked, then delete it from blocked threads and queue it to the ready threads
-        auto threadIt = blockedThreads_.find(tid);
-        blockedThreads_.erase(threadIt);
-        readyQueue_.emplace_back(tid);
-    }
-    else
-    { // mutex-blocked
-        blockedThreads_.erase(tid);
-        if (mutexLockedByThreadId_ == -1)
+        if (sleepUntil < total_quantum_)
         {
-            mutexLockedByThreadId_ = tid;
             readyQueue_.emplace_back(tid);
         }
-    }
-    // is it mutex-blocked? if it's, remain unblocked
-    return EXIT_SUCCESS;
-}
-
-// int Scheduler::mutexTryLock()
-// {
-//     // call the version with a thread ID
-//     return mutexTryLock(currentRunningThread_);
-// }
-
-int Scheduler::mutexTryLock(int tid)
-{
-    _deleteTerminatedThread();
-    if (mutexLockedByThreadId_ == -1) // available mutex
-    {
-        mutexLockedByThreadId_ = tid;
-        return EXIT_SUCCESS;
-    }
-    // locked
-    if (mutexLockedByThreadId_ == tid) // the thread locking the mutex wants to re-lock?
-    {
-        return uthreadException("the thread locking the mutex wants to re-lock it");
-    }
-    // here the thread has to be blocked because of the mutex locked
-    blockedByMutexThreads_.emplace_back(tid); // it may be called again upon mutex unlocking
-    _preempt(PreemptReason::Blocking);
-
-    return EXIT_SUCCESS;
-}
-
-int Scheduler::mutexTryUnlock()
-{
-    _deleteTerminatedThread();
-    if (mutexLockedByThreadId_ == -1) // already unlocked
-    {
-        return uthreadException("can't unlock unlocked mutex");
-    }
-    if (mutexLockedByThreadId_ != getTid())
-    {
-        return uthreadException("only the locking thread can unlock its mutex");
-    }
-    mutexLockedByThreadId_ = -1; // mutex unlocked
-    next_thread_to_lock_mutex_();
-    return EXIT_SUCCESS;
-}
-
-void Scheduler::next_thread_to_lock_mutex_()
-{
-    if (!blockedByMutexThreads_.empty()) // Is there any blocked-by-mutex-thread?
-    {
-        auto uppermost_not_blocked_thread = std::find_if(blockedByMutexThreads_.begin(),
-                                                         blockedByMutexThreads_.end(),
-                                                         [this](int threadId)
-                                                         { return blockedThreads_.count(threadId) == 0; });
-
-        if (uppermost_not_blocked_thread != blockedByMutexThreads_.end())
+        else
         {
-            mutexLockedByThreadId_ = *uppermost_not_blocked_thread;
-            blockedByMutexThreads_.erase(uppermost_not_blocked_thread);
-
-            readyQueue_.emplace_back(mutexLockedByThreadId_);
+            sleepThreads_.insert({tid, sleepUntil});
         }
     }
+    else
+    {
+        readyQueue_.emplace_back(tid);
+    } // TODO - to be tested till here
+
+    return EXIT_SUCCESS;
+}
+
+int Scheduler::sleepThread(int num_quantums) // TODO - to be tested
+{
+    _deleteTerminatedThread();
+    if (currentRunningThread_ == 0) // main thread can't be blocked
+    {
+        return uthreadException("Can't block main thread");
+    }
+
+    int sleepUntil = total_quantum_ + num_quantums;
+    sleepThreads_.insert({currentRunningThread_, sleepUntil});
+
+    return EXIT_SUCCESS;
 }

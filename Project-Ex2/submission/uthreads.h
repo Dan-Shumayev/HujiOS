@@ -8,7 +8,7 @@
 #define _UTHREADS_H
 
 #define MAX_THREAD_NUM 100 /* maximal number of threads */
-#define STACK_SIZE 4096    /* stack size per thread (in bytes) */
+#define STACK_SIZE 8192    /* stack size per thread (in bytes) */ // TODO - change it to 4096!
 
 typedef void (*thread_entry_point)(void);
 
@@ -80,6 +80,8 @@ int uthread_resume(int tid);
  * The number of quantums refers to the number of times a new quantum starts, regardless of the reason. Specifically,
  * the quantum of the thread which has made the call to uthread_sleep isn’t counted.
  * It is considered an error if the main thread (tid==0) calls this function.
+ * When a thread gets both blocked and is sleeping, it needs to wait for both the sleeping period to expire and another
+ * thread to resume it before going back to the READY threads list.
  *
  * @return On success, return 0. On failure, return -1.
  */

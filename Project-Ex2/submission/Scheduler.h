@@ -11,6 +11,8 @@
 #include <unordered_map> // std::unordered_map
 #include <deque>         // std::deque
 #include <unordered_set> // std::unordered_set
+#include <vector>        // std::vector
+#include <set>           // std::multiset
 
 /**
  * Round-Robin scheduler for user-level threads.
@@ -40,22 +42,19 @@ private:
     /** unordered (don't care about the order as there could be "gaps", and no need for order) */
     std::unordered_set<int> blockedThreads_;
 
+    /* TODO - comment */
+    std::multiset<TidToSleepTime, cmp> sleepThreads_;
+
     /** Currently running thread's ID */
     int currentRunningThread_;
 
     /** Thread's ID to be terminated during the next running thread */
     int tidToTerminate_;
 
-    /** threads waiting for the mutex to be unlocked, upon mutex unlocking, one of them becomes READY */
-    std::deque<int> blockedByMutexThreads_;
-
     /** Accounting information: */
     int total_quantum_;
 
     struct sigaction sigAlarm_;
-
-    /** Equals to the thread's ID which locks the mutex, otherwise if no one locks it, equals to -1 */
-    int mutexLockedByThreadId_;
 
     int threadQuantum_; // the time in micro-seconds for each thread to occupy the CPU
 
@@ -92,11 +91,6 @@ private:
 
     /** Looking for possible thread to be terminated from previous execution context, if exists - deleting it */
     void _deleteTerminatedThread();
-
-    /** Two overloads to overcome the impossibility to define default argument that equals to non-static member field */
-    int mutexTryLock(int tid);
-
-    void next_thread_to_lock_mutex_();
 
 public:
     // there will be one instance created and the library calls will be forwarded to it
@@ -152,21 +146,18 @@ public:
     int resumeThread(int tid);
 
     /**
+     * Blocks the currently running thread to #`num_quantums` quantums.
+     * @param tid Thread id to be resumed. May or may not be already blocked.
+     * @return 0 on success, else -1 indicating error code
+     */
+    int sleepThread(int num_quantums);
+
+    /**
      * This method is in charge of preempting the running thread, scheduling the next one
      * to occupy the CPU.
      * @param signo Here only because of sa_handler function's signature
      */
     void timerHandler(int signo);
-
-    /**
-     * Tries locking the mutex in order to perform a critical section.
-     */
-    // int mutexTryLock();
-
-    /**
-     * Tries unlocking the mutex.
-     */
-    int mutexTryUnlock();
 };
 
 /**

@@ -1,5 +1,5 @@
-dans
-Dan Shumayev (207050691)
+dans, avikog
+Dan Shumayev (207050691), Avi Kogan ()
 EX: 2
 
 FILES:
@@ -117,6 +117,13 @@ Theoretical part - answers:
    indicates that there's an IO bottleneck in the program (e.g heavy memory swapping
    when your program runs out of physical RAM).
 
-5. Describe what the functions sigsetjmp and siglongjmp do.
+5. Describe what the functions `sigsetjmp` and `siglongjmp` do.
 
-   TODO - Answer goes here...
+   `sigsetjmp` - this function receives a `sigjmp_buf` struct variable that is to contain several fields destined to
+       hold our the current thread's context (e.g. the  stack pointer, the instruction pointer, possibly the values
+                                     of other registers and the signal mask if the second argument passed is nonzero).
+   `siglongjmp` - this function receives `sigjmp_buf` struct variable (`env`) holding a thread's context as mentioned a
+        bove, and another value functioning as an indicator. The effect of this call transfers the control  back  to
+            the  point where `sigsetjmp` was called with this `env` and restores (among other things) the stack to its
+                state at the time of calling `sigsetjmp`. The second argument passed to this function is a non-zero
+                    value that indicates when we got back from to the thread from which we called `sigsetjmp` previously.

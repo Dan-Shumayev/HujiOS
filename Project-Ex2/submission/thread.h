@@ -7,7 +7,7 @@
 #include <memory> // smart_pointers
 #include "uthreads.h" // STACK_SIZE macro
 #include <setjmp.h> // sigjmp_buf
-#include "uthread_exception.h" // uthreadException, uthreadSystemException
+#include "uthread_utilities.h" // uthreadException, uthreadSystemException
 
 #ifdef __x86_64__ // Pre-defined compiler macro ($ echo | gcc -E -dM -)
 /* code for 64 bit Intel arch */
@@ -37,6 +37,8 @@ private:
     sigjmp_buf env_; // Thread's execution context
     std::unique_ptr<char[]> stack_; // Thread's stack represented by an array of STACK_SIZE bytes
     int numOfQuantum_; // Number of quantum the thread has occupied the CPU
+    /** Equals to the quantum on which this thread can wake up from sleep; If it's not sleeping, this value equals -1 */
+    int sleepUntil_;
 public:
     /**
      * Default-constructor - only for the main thread (id==0).
@@ -70,6 +72,11 @@ public:
      * @return Amount of quantum slots the thread has executed so far
      */
     void incrementNumOfQuantum() {++numOfQuantum_;}
+
+    /**
+     * @return The quantum until the time to sleep expires
+     */
+    int getSleepUntil() const {return sleepUntil_;}
 
     /**
      * @return Returns the thread's environment struct
