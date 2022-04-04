@@ -319,9 +319,9 @@ int Scheduler::resumeThread(int tid)
 int Scheduler::sleepThread(int num_quantums) // TODO - to be tested
 {
     _deleteTerminatedThread();
-    if (currentRunningThread_ == 0) // main thread can't be blocked
+    if (currentRunningThread_ == 0) // main thread can't be fallen asleep
     {
-        return uthreadException("Can't block main thread");
+        return uthreadException("main thread can't sleep");
     }
 
     int sleepUntil = total_quantum_ + num_quantums;
