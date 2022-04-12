@@ -17,6 +17,8 @@ Scheduler::Scheduler(int quantum_usecs) // map, deque, set and struct are defaul
       sigAlarm_(),
       threadQuantum_(quantum_usecs)
 {
+    total_quantum_++;             // Total quantum
+
     /** Insert the main thread into the entire collection of concurrent threads,
     Assuming no element with this ID in threads_. using piecewise_construct because it's not copyable
     so it constructs the pair manually.
@@ -24,24 +26,25 @@ Scheduler::Scheduler(int quantum_usecs) // map, deque, set and struct are defaul
     threads_.emplace(std::piecewise_construct,
                      std::forward_as_tuple(0),
                      std::forward_as_tuple());
+    threads_[0].incrementNumOfQuantum(); // First quantum occupied by the main thread
 
-    Thread &main = threads_[0];
-    main.incrementNumOfQuantum(); // First quantum occupied by the main thread
-    total_quantum_++;             // Total quantum
+    // setup timer handler, and signal every quantum_usecs micro-secs for all threads (including the main thread)
+    _setTimer();
+}
 
-    // set timer handler
-    //    struct sigaction sigAlarm_{}; // Initialize all the fields
+/** Private (internal purposes) methods */
+
+void Scheduler::_setTimer()
+{
+    // set timer handler up
     sigAlarm_.sa_handler = timerHandlerGlobal; // Assign the first field of sigAlarm (sa_handler) as needed, others zeroed
     if (sigaction(SIGVTALRM, &sigAlarm_, nullptr) != 0)
     {
         uthreadSystemException("sigaction");
     }
 
-    // setup timer signal every quantum_usecs micro-secs for all threads (including main thread)
     _setTimerSignal(threadQuantum_);
 }
-
-/** Private (internal purposes) methods */
 
 void Scheduler::_setTimerSignal(int quantum_usecs)
 {
@@ -54,57 +57,58 @@ void Scheduler::_setTimerSignal(int quantum_usecs)
 
 int Scheduler::_getLowestAvailableId() const
 {
-    for (int tid = 1; tid <= (int)threads_.size(); ++tid)
+    size_t lowestTid = 1;
+    while (lowestTid < MAX_THREAD_NUM && threads_.find(lowestTid) != threads_.end())
     {
-        if (tid < MAX_THREAD_NUM && threads_.find(tid) == threads_.end()) // Indicating no such element (thread with this tid)
-        {
-            return tid;
-        }
+        lowestTid++;
     }
-    return EXIT_FAIL;
+
+    return lowestTid == MAX_THREAD_NUM ? EXIT_FAIL : (int)lowestTid;
 }
 
 bool Scheduler::_isThreadExist(int tid)
 {
-    if (threads_.find(tid) == threads_.end()) // Doesn't exist
-    {
-        return false;
-    }
-    return true;
+    return !(threads_.find(tid) == threads_.end());
 }
 
 void Scheduler::_preempt(PreemptReason preemptReason)
 {
-    ++total_quantum_;
-
-    // In case its timer expired, so it'll be pushed to end of ready queue
-    int preemptedThreadId = currentRunningThread_;
-
-    // Assumption: the readyQueue_ is never empty
-    Thread &nextThread = threads_[readyQueue_.front()]; // By-reference, avoiding copy-ctr
+    auto nextTid = readyQueue_.front();
     readyQueue_.pop_front();
 
-    nextThread.incrementNumOfQuantum();
-    currentRunningThread_ = nextThread.get_id();
+    ++total_quantum_;
+    threads_[nextTid].incrementNumOfQuantum();
 
-    if (preemptedThreadId == nextThread.get_id()) // In case only main thread exists,
-                                                  // and no other thread spawned so far
+    if (currentRunningThread_ == nextTid) // In case only main thread exists,
+        // and no other thread spawned so far
     {
+
         // No need to jump (siglongjmp), because given this branch it implies we never jumped from main thread
         // to another one, so main thread's env is zero (either way, it's an optimization)
         return; // Let the main thread resume its execution
     }
 
-    // "reset" the timer for the newly resumed thread
-    // note that all callers to '_preempt' are masked
-    // so the following timer can't interrupt us during this
-    // routine until we jump
-    _setTimerSignal(threadQuantum_);
+    _applySigJmp(preemptReason, nextTid);
+}
+
+void Scheduler::_applySigJmp(const Scheduler::PreemptReason &preemptReason, int nextTid)
+{
+    // In case its timer expired, so it'll be pushed to end of ready queue
+    int preemptedThreadId = currentRunningThread_;
+
+    // Assumption: the readyQueue_ is never empty
+    Thread &nextThread = threads_[nextTid]; // By-reference, avoiding copy-ctr
+    currentRunningThread_ = nextThread.get_id();
 
     if (preemptReason == PreemptReason::Termination)
     {
         tidToTerminate_ = preemptedThreadId;
 
+        // "reset" the timer for the newly resumed thread
+        // note that all callers to '_preempt' are masked
+        // so the following timer can't interrupt us during this
+        // routine until we jump
+        _setTimerSignal(threadQuantum_);
         // the thread being terminated will be deleted from memory only once
         // we have jumped to the next thread, using the uthread library's functions
         siglongjmp(nextThread.get_env(), 1);
@@ -118,6 +122,12 @@ void Scheduler::_preempt(PreemptReason preemptReason)
             // from its last instruction stored by env
             return;
         }
+
+        // "reset" the timer for the newly resumed thread
+        // note that all callers to '_preempt' are masked
+        // so the following timer can't interrupt us during this
+        // routine until we jump
+        _setTimerSignal(threadQuantum_);
         siglongjmp(nextThread.get_env(), 1); // jump to the next thread
     }
 }
@@ -131,12 +141,78 @@ void Scheduler::_deleteReadyThread(int tid)
 
 void Scheduler::_deleteTerminatedThread()
 {
-    if (tidToTerminate_ != -1) // is there a thread to terminate?
+    if (threads_.erase(tidToTerminate_) > 0) // is there a thread to terminate?
     {
-        threads_.erase(tidToTerminate_);
-        tidToTerminate_ = -1; // nothing to erase for now
+        tidToTerminate_ = -1; // mark as terminated
     }
 }
+
+int Scheduler::_blockOtherThread(int tid)
+{
+    auto it = _isTidSleeping(tid);
+    if (it != sleepThreads_.end())
+    {
+        blockedThreads_.emplace(tid);
+        sleepThreads_.erase(it);
+    }
+    else // in ready queue
+    {
+        // delete this thread from the ready queue, and block it
+        _deleteReadyThread(tid);
+        blockedThreads_.emplace(tid);
+    }
+
+    return EXIT_SUCCESS;
+}
+
+void Scheduler::_sleepToReady()
+{
+    auto end = sleepThreads_.lower_bound({0, total_quantum_});
+    for(auto it = sleepThreads_.begin(); it != end; ++it)
+    {
+        readyQueue_.emplace_back(it->first);
+    }
+    sleepThreads_.erase(sleepThreads_.begin(), end);
+}
+
+int Scheduler::_getSpawnedThreadReady(threadEntryPoint function, int nextTid)
+{
+    readyQueue_.emplace_back(nextTid); // Inserted to the end of ready threads
+
+    /** Insert the newly spawned thread into the entire collection of concurrent threads,
+        Assuming no element with this ID in threads_. using some trickery because it's not copyable */
+    threads_.emplace(std::piecewise_construct,
+                     std::forward_as_tuple(nextTid),
+                     std::forward_as_tuple(nextTid, function));
+    return nextTid;
+}
+
+void Scheduler::_terminateOtherThread(int tid)
+{
+    tidToTerminate_ = tid;
+
+    auto it = _isTidSleeping(tid);
+
+    if (it == sleepThreads_.end()) // If sleeping and blocked, then it'd be only in blocked
+    {
+        if (blockedThreads_.erase(tid) < 1) // No blocked one erased -> ready
+        {
+            _deleteReadyThread(tid);
+        }
+    }
+    else
+    {
+        // then is sleeping, and can't be blocked. otherwise, it'd be only in blocked as per our impl.
+        sleepThreads_.erase(it);
+    }
+}
+
+std::multiset<TidToSleepTime, sleepTimeCmp>::iterator Scheduler::_isTidSleeping(int tid) const
+{
+    return std::find_if(sleepThreads_.begin(), sleepThreads_.end(), [tid](const TidToSleepTime& p)
+    { return p.first == tid; } );
+}
+
 
 /** API methods */
 
@@ -147,28 +223,20 @@ void Scheduler::timerHandler(int signo)
         uthreadException("Not the virtual timer signal. SIGVTALRM is required.");
         return;
     }
+
     _deleteTerminatedThread();
 
-    sleepToReady();
+    _sleepToReady();
 
     readyQueue_.emplace_back(currentRunningThread_);
 
     _preempt(PreemptReason::QuantumExpiration);
 }
 
-void Scheduler::sleepToReady()
-{
-    auto end = sleepThreads_.lower_bound({0, total_quantum_});
-    for(auto it = sleepThreads_.begin(); it != end; ++it)
-    {
-        readyQueue_.emplace_back(it->first);
-    }
-    sleepThreads_.erase(sleepThreads_.begin(), end);
-}
-
 int Scheduler::spawnThread(threadEntryPoint function)
 {
     _deleteTerminatedThread();
+
     if (function == nullptr)
     {
         return uthreadException("Can't spawn thread with nullptr function");
@@ -184,20 +252,13 @@ int Scheduler::spawnThread(threadEntryPoint function)
         return EXIT_FAIL;
     }
 
-    /** Insert the newly spawned thread into the entire collection of concurrent threads,
-        Assuming no element with this ID in threads_. using some trickery because it's not copyable*/
-    threads_.emplace(std::piecewise_construct,
-                     std::forward_as_tuple(nextTid),
-                     std::forward_as_tuple(nextTid, function));
-
-    readyQueue_.emplace_back(nextTid); // Inserted to the end of ready threads
-
-    return nextTid;
+    return _getSpawnedThreadReady(function, nextTid);
 }
 
 int Scheduler::terminateThread(int tid)
 {
     _deleteTerminatedThread();
+
     if (tid == 0) // Main thread
     {
         // since Scheduler's only instance is via a static unique_ptr in main thread (scheduler_manager),
@@ -205,95 +266,76 @@ int Scheduler::terminateThread(int tid)
         // thus so will Scheduler and all its resources (threads).
         std::exit(EXIT_SUCCESS);
     }
+
     if (!_isThreadExist(tid))
     {
         return uthreadException("Don't terminate a non existent thread");
     }
-    if (tid == currentRunningThread_)
+
+    if (tid == currentRunningThread_) // Self-terminating
     {
         _preempt(PreemptReason::Termination);
     }
     else // The thread is sleeping/blocked/ready - terminate it by only deleting it from suitable data structures
     {
-        tidToTerminate_ = tid;
-
-        auto it = isTidSleeping(tid);
-
-        if (it != sleepThreads_.end()) // Is sleeping?
-        {
-            sleepThreads_.erase(it);
-        }
-        else if (blockedThreads_.erase(tid) == 0) // Not in blocked? If it's in blocked - erased
-        // then in ready
-        {
-            _deleteReadyThread(tid);
-        }
+        _terminateOtherThread(tid);
     }
-    return EXIT_SUCCESS;
-}
 
-std::multiset<TidToSleepTime, sleepTimeCmp>::iterator Scheduler::isTidSleeping(int tid) const
-{
-    return std::find_if(sleepThreads_.begin(), sleepThreads_.end(), [tid](const TidToSleepTime& p)
-            { return p.first == tid; } );
+    return EXIT_SUCCESS;
 }
 
 int Scheduler::getThreadQuantums(int tid)
 {
     _deleteTerminatedThread();
-    if (!_isThreadExist(tid) || tidToTerminate_ == tid)
+
+    if (_isThreadExist(tid) && tid != tidToTerminate_)
     {
-        return uthreadException("Can't get quantums of non existent thread");
+        return threads_[tid].get_quantum_running();
     }
-    Thread &thread = threads_[tid];
-    return thread.get_quantum_running();
+
+    return uthreadException("Can't get quantums of non existent thread");
 }
 
 int Scheduler::blockThread(int tid)
 {
     _deleteTerminatedThread();
-    if (!_isThreadExist(tid))
-    {
-        return uthreadException("Don't block non existent thread");
-    }
+
     if (tid == 0) // main thread can't be blocked
     {
         return uthreadException("Can't block main thread");
     }
+
+    if (!_isThreadExist(tid))
+    {
+        return uthreadException("Don't block non existent thread");
+    }
+
     if (blockedThreads_.find(tid) != blockedThreads_.end()) // already blocked -> no-operation required
     {
         return EXIT_SUCCESS;
     }
 
     // check if this thread is sleeping, thus dequeue from sleeping and queue into block
-    auto it = isTidSleeping(tid);
-    if (it != sleepThreads_.end())
-    {
-        blockedThreads_.emplace(tid);
-        sleepThreads_.erase(it);
-    }
-    else if (currentRunningThread_ == tid) // If sleeping -> can't be currently running
+    if (currentRunningThread_ == tid) // If sleeping -> can't be currently running
     {
         blockedThreads_.emplace(tid);
         _preempt(PreemptReason::Blocking); // block the running thread
-    }
-    else // in ready queue
-    {
-        blockedThreads_.emplace(tid);
 
-        // delete this thread from the ready queue
-        _deleteReadyThread(tid);
+        return EXIT_SUCCESS;
     }
-    return EXIT_SUCCESS;
+
+    return _blockOtherThread(tid);
 }
 
 int Scheduler::resumeThread(int tid)
 {
     _deleteTerminatedThread();
+
     if (!_isThreadExist(tid))
     {
         return uthreadException("Can't resume non existent thread");
     }
+
     auto threadIterator = blockedThreads_.find(tid); // store it in case we'll erase it from blocked set
     if (threadIterator == blockedThreads_.end())     // not blocked thread => no-operation
     {
@@ -308,16 +350,15 @@ int Scheduler::resumeThread(int tid)
     //  It'll be resumed at the next quantums if its sleeping-time has been expired, as our timerHandler transfers on
     //   every quantum the sleeping threads which are to wake up (sleepTime > total_quantums), thus it'll be ready as
     //      requested.
-    Thread &currThread = threads_[tid];
-    int sleepUntil = currThread.getSleepUntil();
-    if (currThread.getSleepUntil() != -1) // If true -> It was sleeping and blocked, now only sleeping
+    int sleepUntil = threads_[tid].getSleepUntil();
+    if (sleepUntil != -1) // If true -> It was sleeping and blocked, now only sleeping
     {
-        if (isTidSleeping(tid) == sleepThreads_.end())
+        if (_isTidSleeping(tid) == sleepThreads_.end())
         {
             sleepThreads_.insert({tid, sleepUntil}); // At the next quantum it'll be ready if sleeping-time expired
         }
     }
-    else
+    else // Not sleeping, get ready!
     {
         readyQueue_.emplace_back(tid);
     }

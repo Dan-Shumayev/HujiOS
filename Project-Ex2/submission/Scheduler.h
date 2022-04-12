@@ -167,9 +167,19 @@ public:
      * Checks on every quantum whether there are threads that are sleeping and can be wakened up. If there are - it
      * transitions them into the ready queue, such that they can race with other ready threads at the next turns.
      */
-    void sleepToReady();
+    void _sleepToReady();
 
-    std::multiset<TidToSleepTime, sleepTimeCmp>::iterator isTidSleeping(int tid) const;
+    std::multiset<TidToSleepTime, sleepTimeCmp>::iterator _isTidSleeping(int tid) const;
+
+    int _getSpawnedThreadReady(threadEntryPoint function, int nextTid);
+
+    void _applySigJmp(const PreemptReason &preemptReason, int nextTid);
+
+    void _setTimer();
+
+    void _terminateOtherThread(int tid);
+
+    int _blockOtherThread(int tid);
 };
 
 /**
