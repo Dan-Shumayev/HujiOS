@@ -75,6 +75,8 @@ bool Scheduler::_isThreadExist(int tid)
 
 void Scheduler::_preempt(PreemptReason preemptReason)
 {
+    ++total_quantum_;
+
     // In case its timer expired, so it'll be pushed to end of ready queue
     int preemptedThreadId = currentRunningThread_;
 
@@ -82,9 +84,8 @@ void Scheduler::_preempt(PreemptReason preemptReason)
     Thread &nextThread = threads_[readyQueue_.front()]; // By-reference, avoiding copy-ctr
     readyQueue_.pop_front();
 
-    currentRunningThread_ = nextThread.get_id();
-    ++total_quantum_;
     nextThread.incrementNumOfQuantum();
+    currentRunningThread_ = nextThread.get_id();
 
     if (preemptedThreadId == nextThread.get_id()) // In case only main thread exists,
                                                   // and no other thread spawned so far
@@ -108,7 +109,7 @@ void Scheduler::_preempt(PreemptReason preemptReason)
         // we have jumped to the next thread, using the uthread library's functions
         siglongjmp(nextThread.get_env(), 1);
     }
-    else // Quantum expired OR Blocked
+    else // Quantum expired OR Blocked OR Falls asleep
     {
         Thread &previousThread = threads_[preemptedThreadId]; // assumed that there's a thread with this ID
         if (sigsetjmp(previousThread.get_env(), 1) != 0)
@@ -141,22 +142,28 @@ void Scheduler::_deleteTerminatedThread()
 
 void Scheduler::timerHandler(int signo)
 {
-    _deleteTerminatedThread();
     if (signo != SIGVTALRM)
     {
         uthreadException("Not the virtual timer signal. SIGVTALRM is required.");
         return;
     }
+    _deleteTerminatedThread();
 
-    auto end = sleepThreads_.lower_bound({ 0, total_quantum_ }); // TODO - to be tested
+    sleepToReady();
+
+    readyQueue_.emplace_back(currentRunningThread_);
+
+    _preempt(PreemptReason::QuantumExpiration);
+}
+
+void Scheduler::sleepToReady()
+{
+    auto end = sleepThreads_.lower_bound({0, total_quantum_});
     for(auto it = sleepThreads_.begin(); it != end; ++it)
     {
         readyQueue_.emplace_back(it->first);
     }
-    sleepThreads_.erase(sleepThreads_.begin(), end); // TODO - to be tested till here
-
-    readyQueue_.emplace_back(currentRunningThread_);
-    _preempt(PreemptReason::QuantumExpiration);
+    sleepThreads_.erase(sleepThreads_.begin(), end);
 }
 
 int Scheduler::spawnThread(threadEntryPoint function)
@@ -194,7 +201,7 @@ int Scheduler::terminateThread(int tid)
     if (tid == 0) // Main thread
     {
         // since Scheduler's only instance is via a static unique_ptr in main thread (scheduler_manager),
-        // the static variable will be destroyed (per the CPP standard) and
+        // the static variable will be destroyed (as per the CPP standard) and
         // thus so will Scheduler and all its resources (threads).
         std::exit(EXIT_SUCCESS);
     }
@@ -208,20 +215,27 @@ int Scheduler::terminateThread(int tid)
     }
     else // The thread is sleeping/blocked/ready - terminate it by only deleting it from suitable data structures
     {
-        // TODO - to be tested
-        threads_.erase(tid);
+        tidToTerminate_ = tid;
 
-        auto it = std::find_if(sleepThreads_.begin(), sleepThreads_.end(), [tid](const TidToSleepTime& p)
-        { return p.first == tid; });
+        auto it = isTidSleeping(tid);
 
-        if (blockedThreads_.erase(tid) == 0 && it == sleepThreads_.end())
-        // not in sleeping/blocked threads => then in ready
+        if (it != sleepThreads_.end()) // Is sleeping?
+        {
+            sleepThreads_.erase(it);
+        }
+        else if (blockedThreads_.erase(tid) == 0) // Not in blocked? If it's in blocked - erased
+        // then in ready
         {
             _deleteReadyThread(tid);
         }
-        // TODO - to be tested till here
     }
     return EXIT_SUCCESS;
+}
+
+std::multiset<TidToSleepTime, sleepTimeCmp>::iterator Scheduler::isTidSleeping(int tid) const
+{
+    return std::find_if(sleepThreads_.begin(), sleepThreads_.end(), [tid](const TidToSleepTime& p)
+            { return p.first == tid; } );
 }
 
 int Scheduler::getThreadQuantums(int tid)
@@ -250,17 +264,15 @@ int Scheduler::blockThread(int tid)
     {
         return EXIT_SUCCESS;
     }
-    // TODO - to be tested from here
+
     // check if this thread is sleeping, thus dequeue from sleeping and queue into block
-    auto it = std::find_if(sleepThreads_.begin(), sleepThreads_.end(), [tid](const TidToSleepTime& p)
-    { return p.first == tid; });
+    auto it = isTidSleeping(tid);
     if (it != sleepThreads_.end())
     {
         blockedThreads_.emplace(tid);
         sleepThreads_.erase(it);
     }
-    // TODO - to be tested till here
-    if (currentRunningThread_ == tid)
+    else if (currentRunningThread_ == tid) // If sleeping -> can't be currently running
     {
         blockedThreads_.emplace(tid);
         _preempt(PreemptReason::Blocking); // block the running thread
@@ -292,40 +304,43 @@ int Scheduler::resumeThread(int tid)
     //  doesn't have to sleep
     blockedThreads_.erase(threadIterator);
 
-    // TODO - to be tested
-    // insert tid thread to readyQueue_ iff its sleepTime <= currentQuantum, otherwise queue it to the sleepQueue_
-    //  which is sorted by each thread's sleepTime
+    // Insert thread id to sleepThreads iff its sleepUntil != -1, that is, it's was both sleeping and blocked.
+    //  It'll be resumed at the next quantums if its sleeping-time has been expired, as our timerHandler transfers on
+    //   every quantum the sleeping threads which are to wake up (sleepTime > total_quantums), thus it'll be ready as
+    //      requested.
     Thread &currThread = threads_[tid];
     int sleepUntil = currThread.getSleepUntil();
-    if (currThread.getSleepUntil() != -1)
+    if (currThread.getSleepUntil() != -1) // If true -> It was sleeping and blocked, now only sleeping
     {
-        if (sleepUntil < total_quantum_)
+        if (isTidSleeping(tid) == sleepThreads_.end())
         {
-            readyQueue_.emplace_back(tid);
-        }
-        else
-        {
-            sleepThreads_.insert({tid, sleepUntil});
+            sleepThreads_.insert({tid, sleepUntil}); // At the next quantum it'll be ready if sleeping-time expired
         }
     }
     else
     {
         readyQueue_.emplace_back(tid);
-    } // TODO - to be tested till here
+    }
 
     return EXIT_SUCCESS;
 }
 
-int Scheduler::sleepThread(int num_quantums) // TODO - to be tested
+int Scheduler::sleepThread(int num_quantums)
 {
     _deleteTerminatedThread();
-    if (currentRunningThread_ == 0) // main thread can't be fallen asleep
+    if (currentRunningThread_ == 0) // main current_thread can't be fallen asleep
     {
-        return uthreadException("main thread can't sleep");
+        return uthreadException("main current_thread can't sleep");
+    }
+    if (num_quantums <= 0)
+    {
+        return uthreadException("can't sleep for a non-positive number of quantums");
     }
 
-    int sleepUntil = total_quantum_ + num_quantums;
-    sleepThreads_.insert({currentRunningThread_, sleepUntil});
+    Thread& current_thread = threads_[currentRunningThread_];
+    current_thread.setSleepUntil(total_quantum_ + num_quantums - 1);
+    sleepThreads_.insert({currentRunningThread_, current_thread.getSleepUntil()});
+    _preempt((PreemptReason::Blocking));
 
     return EXIT_SUCCESS;
 }
