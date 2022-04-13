@@ -167,7 +167,7 @@ int Scheduler::_blockOtherThread(int tid)
 
 void Scheduler::_sleepToReady()
 {
-    auto end = sleepThreads_.lower_bound({0, total_quantum_});
+    auto end = sleepThreads_.lower_bound({0, total_quantum_ + 1});
     for(auto it = sleepThreads_.begin(); it != end; ++it)
     {
         readyQueue_.emplace_back(it->first);
@@ -379,7 +379,7 @@ int Scheduler::sleepThread(int num_quantums)
     }
 
     Thread& current_thread = threads_[currentRunningThread_];
-    current_thread.setSleepUntil(total_quantum_ + num_quantums - 1);
+    current_thread.setSleepUntil(total_quantum_ + num_quantums);
     sleepThreads_.insert({currentRunningThread_, current_thread.getSleepUntil()});
     _preempt((PreemptReason::Blocking));
 
