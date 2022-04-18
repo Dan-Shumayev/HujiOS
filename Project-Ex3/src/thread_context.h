@@ -5,19 +5,9 @@
 #include <cstddef> // size_t
 #include <pthread.h> // pthread_t
 #include <algorithm> // std::sort
-#include <map>
 #include "exceptions.h"
 #include "MapReduceClient.h"
 
-// TODO - use those to implement Shuffle
-struct K2PointerComp {
-    bool operator()(const K2* first, const K2* second) const
-    {
-        return (*first < *second);
-    }
-};
-
-typedef std::map<K2*, std::vector<V2 *>, K2PointerComp> IntermediateMap;
 
 /** forward-declaration to break the include-cycle */
 class JobContext;
@@ -30,10 +20,11 @@ private:
     pthread_t pthreadThread_;
 
     JobContext& currentJobContext_;
-    // It's a reference (and not a smart pointer) because some of the library
-    // functions receive the job handle as a void*, resulting required static_cast from
-    // a smart pointer (we'd wish to define) into a void*. But, casting a smart pointer
-    // defects its destruction.
+
+    /** It's a reference (and not a smart pointer) because some of the library
+        functions receive the job handle as a void*, resulting required static_cast from
+        a smart pointer (we'd wish to define) into a void*. But, casting a smart pointer
+        defects its destruction. */
     IntermediateVec intermediateVec_;
 
     /** true iff pthread_join was called on pthreadThread */
@@ -42,18 +33,23 @@ private:
 public:
     ThreadContext(size_t tid, JobContext& jobContext);
 
-    static void *_threadEntryPoint(void *context); // TODO - consider implementing separated entry point for thread-0
-                                                    // TODO ... as he exclusively invokes ShufflePhase
+    /** Internal methods */
 
-    JobContext& getJobContext() {return currentJobContext_;};
+    static void *_threadEntryPoint(void *context);
 
-    void invokeMapPhase();
+    JobContext& _getJobContext() {return currentJobContext_;};
 
-    void invokeSortPhase();
+    void _invokeMapPhase();
 
-    void invokeShufflePhase();
+    void _invokeSortPhase();
 
-    void invokeReducePhase();
+    void _invokeShufflePhase();
+
+    void _invokeReducePhase();
+
+    void _setPhasePercentage(float numOfProcessed, size_t total);
+
+    /** External methods */
 
     void pthreadJoin();
 
@@ -62,12 +58,6 @@ public:
     void pushOutputElem(OutputPair&& outputPair);
 
     IntermediateVec& getIntermediateVec() {return intermediateVec_;};
-
-    void updateCurrentPercentage(size_t numOfInputElems);
-
-    void _setPhasePercentage(float numOfProcessed, size_t total);
-
-    void updateCurrentPercentageReduce(size_t currProcessed, size_t numOfInputElems);
 };
 
 

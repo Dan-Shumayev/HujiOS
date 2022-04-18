@@ -20,40 +20,30 @@ void *ThreadContext::_threadEntryPoint(void *context)
 {
     // Setup threadContext and jobContext
     auto threadContext = static_cast<ThreadContext*>(context);
-    JobContext& currJobContext = threadContext->getJobContext();
+    JobContext& currJobContext = threadContext->_getJobContext();
 
     /** Map phase */
-    threadContext->invokeMapPhase();
+    threadContext->_invokeMapPhase();
 
     /** Sort phase */
-    threadContext->invokeSortPhase();
+    threadContext->_invokeSortPhase();
 
     /** Barrier - Let's wait here until all threads finish mapping and sorting */
     currJobContext.barrier();
 
     /** Shuffle phase */
-    threadContext->invokeShufflePhase();
+    threadContext->_invokeShufflePhase();
 
     /** Barrier -  Let all threads wait here until thread 0 finishes shuffling */
     currJobContext.barrier();
 
     /** Reduce phase */
-    threadContext->invokeReducePhase();
+    threadContext->_invokeReducePhase();
 
     return nullptr; // we must(as per-pthread_create) return something as we promise returning void-pointer, hence null
 }
 
-void ThreadContext::pthreadJoin()
-{
-    if (!isJoined_) {
-        if (pthread_join(pthreadThread_, nullptr)) {
-            systemError("[[pthread_join]] failed.");
-        }
-        isJoined_ = true;
-    }
-}
-
-void ThreadContext::invokeMapPhase()
+void ThreadContext::_invokeMapPhase()
 {
     // Every thread executes it before getting into the next phase, because they stop at barrier
     //  Then, no matter who sets this when - it remains the same until they all get to barrier
@@ -67,33 +57,11 @@ void ThreadContext::invokeMapPhase()
         auto elem = currentJobContext_.getInputVector()[ix];
         currentJobContext_.invokeClientMapRoutine(elem.first, elem.second, static_cast<void *>(this));
 
-        updateCurrentPercentage(numOfInputElems);
+        // TODO - stage update
     }
 }
 
-void ThreadContext::updateCurrentPercentage(size_t numOfInputElems)
-{
-    currentJobContext_.lockThreadMutex();
-
-    // TODO - consider undo this increment atomically as we've already have mutex here
-    auto currNumOfProcessedElems = currentJobContext_.lastProcessedInputElementGetAndIncrement();
-    currentJobContext_.setJobStatePercentage(((float)currNumOfProcessedElems / numOfInputElems) * 100);
-
-    currentJobContext_.unlockThreadMutex();
-}
-
-void ThreadContext::updateCurrentPercentageReduce(size_t currProcessed, size_t numOfInputElems)
-{
-    currentJobContext_.lockThreadMutex();
-
-    // TODO - consider undo this increment atomically as we've already have mutex here
-    auto currNumOfProcessedElems = currentJobContext_.lastProcessedInputElementGetAndAdd(currProcessed);
-    currentJobContext_.setJobStatePercentage(((float)currNumOfProcessedElems / numOfInputElems) * 100);
-
-    currentJobContext_.unlockThreadMutex();
-}
-
-void ThreadContext::invokeSortPhase()
+void ThreadContext::_invokeSortPhase()
 {
     std::sort(intermediateVec_.begin(), intermediateVec_.end(),
               [](const IntermediatePair &lhs, const IntermediatePair &rhs) {
@@ -102,7 +70,7 @@ void ThreadContext::invokeSortPhase()
     );
 }
 
-void ThreadContext::invokeShufflePhase()
+void ThreadContext::_invokeShufflePhase()
 {
     if (thread_id_ == 0) // W.L.O.G - only thread-0 performs the shuffle phase
     {
@@ -159,24 +127,21 @@ void ThreadContext::_setPhasePercentage(float numOfProcessed, size_t total) {
     currentJobContext_.setJobStatePercentage((numOfProcessed / total) * 100);
 }
 
-void ThreadContext::invokeReducePhase()
+void ThreadContext::_invokeReducePhase()
 {
-    currentJobContext_.setJobStateStage(REDUCE_STAGE);
     size_t numOfShuffleElems = JobContext::getNumOfShuffledPairs(currentJobContext_.getShuffledQueue());
     auto shuffleQueue = currentJobContext_.getShuffledQueue();
 
-    currentJobContext_.resetLastProcessedCounter(); // TODO - multiple threads reset it
-
     size_t ix;
-    while ((ix = currentJobContext_.shuffleAtomicCounter()) < shuffleQueue.size())
+    while ((ix = currentJobContext_.atomicCounter()) < shuffleQueue.size())
     {
         currentJobContext_.invokeClientReduceRoutine(&shuffleQueue[ix],static_cast<void *>(this));
 
-        updateCurrentPercentageReduce(shuffleQueue[ix].size(), numOfShuffleElems);
+        // TODO - stage update
     }
 }
 
-void ThreadContext::pushIntermediateElem(IntermediatePair&& intermediatePair)
+void ThreadContext::pushIntermediateElem(IntermediatePair &&intermediatePair)
 {
     intermediateVec_.emplace_back(intermediatePair);
 }
@@ -184,4 +149,15 @@ void ThreadContext::pushIntermediateElem(IntermediatePair&& intermediatePair)
 void ThreadContext::pushOutputElem(OutputPair &&outputPair)
 {
     currentJobContext_.updateOutputVector(std::forward<OutputPair>(outputPair));
+}
+
+void ThreadContext::pthreadJoin()
+{
+    // TODO - transfer this checking to `WaitForJob`
+    if (!isJoined_) {
+        if (pthread_join(pthreadThread_, nullptr)) {
+            systemError("[[pthread_join]] failed.");
+        }
+        isJoined_ = true;
+    }
 }

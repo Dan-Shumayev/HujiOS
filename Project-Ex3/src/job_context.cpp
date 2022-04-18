@@ -1,7 +1,3 @@
-//
-// Created by dan-os on 09/06/2021.
-//
-
 #include "job_context.h"
 
 JobContext::JobContext(const MapReduceClient &client, const InputVec &inputVec, OutputVec &outputVec, int numOfThreads)
@@ -9,15 +5,12 @@ JobContext::JobContext(const MapReduceClient &client, const InputVec &inputVec, 
   inputVec_(inputVec),
   outputVec_(outputVec),
   currJobState_({UNDEFINED_STAGE, 0.0}),
-  lastProcessedInputElementGetAndIncrement_(0),
-  lastProcessedShuffledElementGetAndIncrement_(0),
-  jobStateMutex_(PTHREAD_MUTEX_INITIALIZER),
+  jobStateBitwise_{},
   numOfThreads_(numOfThreads),
   threadContexts_(numOfThreads),
   lastThreadWorker_(0),
   threadsBarrier_(numOfThreads_),
-  outputVecMutex_(PTHREAD_MUTEX_INITIALIZER),
-  shuffleQueAtomicCounter_(0)
+  outputVecMutex_(PTHREAD_MUTEX_INITIALIZER)
   {
   for (size_t i = 0; i < numOfThreads_; ++i)
   {
@@ -28,7 +21,7 @@ JobContext::JobContext(const MapReduceClient &client, const InputVec &inputVec, 
 
 JobContext::~JobContext()
 {
-    if (pthread_mutex_destroy(&jobStateMutex_) || pthread_mutex_destroy(&outputVecMutex_))
+    if (pthread_mutex_destroy(&outputVecMutex_))
     {
         systemError("[[pthread_mutex_destroy]] failed.");
     }
@@ -42,7 +35,7 @@ void JobContext::getJobDone()
     }
 }
 
-void JobContext::lockOutputVecMutex()
+void JobContext::_lockOutputVecMutex()
 {
     if (pthread_mutex_lock(&outputVecMutex_))
     {
@@ -50,7 +43,7 @@ void JobContext::lockOutputVecMutex()
     }
 }
 
-void JobContext::unlockOutputVecMutex()
+void JobContext::_unlockOutputVecMutex()
 {
     if (pthread_mutex_unlock(&outputVecMutex_))
     {
@@ -58,28 +51,13 @@ void JobContext::unlockOutputVecMutex()
     }
 }
 
-void JobContext::lockThreadMutex()
-{
-    if (pthread_mutex_lock(&jobStateMutex_))
-    {
-        systemError("[[pthread_mutex_lock]] failed.");
-    }
-}
-
-void JobContext::unlockThreadMutex()
-{
-    if (pthread_mutex_unlock(&jobStateMutex_))
-    {
-        systemError("[[pthread_mutex_unlock]] failed.");
-    }
-}
-
 void JobContext::updateOutputVector(OutputPair &&outputPair)
 {
-    // anyone of the threads may try updating this output vector, hence we have to make this update a critical section
-    lockOutputVecMutex();
+    // anyone of the threads may try updating this output vector,
+    // hence we have to make this update a critical section
+    _lockOutputVecMutex();
     outputVec_.emplace_back(outputPair);
-    unlockOutputVecMutex();
+    _unlockOutputVecMutex();
 }
 
 size_t JobContext::getNumOfShuffledPairs(std::vector<std::vector<IntermediatePair>> &shuffledQueue)
