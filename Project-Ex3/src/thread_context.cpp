@@ -1,7 +1,3 @@
-//
-// Created by dan-os on 12/06/2021.
-//
-
 #include <unistd.h>
 #include <unordered_map>
 #include "thread_context.h"
@@ -59,8 +55,11 @@ void ThreadContext::pthreadJoin()
 
 void ThreadContext::invokeMapPhase()
 {
+    // Every thread executes it before getting into the next phase, because they stop at barrier
+    //  Then, no matter who sets this when - it remains the same until they all get to barrier
     currentJobContext_.setJobStateStage(MAP_STAGE);
     size_t numOfInputElems = currentJobContext_.getNumOfInputElems();
+
     size_t ix;
     while ((ix = currentJobContext_.lastThreadAtomicGetIncrement()) < numOfInputElems)
     {
@@ -68,60 +67,112 @@ void ThreadContext::invokeMapPhase()
         auto elem = currentJobContext_.getInputVector()[ix];
         currentJobContext_.invokeClientMapRoutine(elem.first, elem.second, static_cast<void *>(this));
 
-        auto amountOfProcessedElems = currentJobContext_.lastProcessedInputElementGetAndIncrement();
-        currentJobContext_.setJobStatePercentage((float(amountOfProcessedElems) / numOfInputElems) * 100);
+        updateCurrentPercentage(numOfInputElems);
     }
+}
+
+void ThreadContext::updateCurrentPercentage(size_t numOfInputElems)
+{
+    currentJobContext_.lockThreadMutex();
+
+    // TODO - consider undo this increment atomically as we've already have mutex here
+    auto currNumOfProcessedElems = currentJobContext_.lastProcessedInputElementGetAndIncrement();
+    currentJobContext_.setJobStatePercentage(((float)currNumOfProcessedElems / numOfInputElems) * 100);
+
+    currentJobContext_.unlockThreadMutex();
+}
+
+void ThreadContext::updateCurrentPercentageReduce(size_t currProcessed, size_t numOfInputElems)
+{
+    currentJobContext_.lockThreadMutex();
+
+    // TODO - consider undo this increment atomically as we've already have mutex here
+    auto currNumOfProcessedElems = currentJobContext_.lastProcessedInputElementGetAndAdd(currProcessed);
+    currentJobContext_.setJobStatePercentage(((float)currNumOfProcessedElems / numOfInputElems) * 100);
+
+    currentJobContext_.unlockThreadMutex();
 }
 
 void ThreadContext::invokeSortPhase()
 {
-    std::sort(intermediateVec_.begin(), intermediateVec_.end()); // Elements are compared using operator<
+    std::sort(intermediateVec_.begin(), intermediateVec_.end(),
+              [](const IntermediatePair &lhs, const IntermediatePair &rhs) {
+                    return *lhs.first < *rhs.first;
+                }
+    );
 }
 
 void ThreadContext::invokeShufflePhase()
 {
-    if (thread_id_ == 0) // by convention - only thread-0 performs the shuffle phase
+    if (thread_id_ == 0) // W.L.O.G - only thread-0 performs the shuffle phase
     {
-        // TODO - do this function from scratch!
+        auto numOfIntermediateVecs = currentJobContext_.getNumOfThreads();
+        auto totalNumOfInterPairs = currentJobContext_.getNumOfIntermediatePairs();
+
         currentJobContext_.setJobStateStage(SHUFFLE_STAGE);
-        size_t numOfIntermediatePairs = currentJobContext_.getNumOfIntermediatePairs();
+        _setPhasePercentage(0.0, numOfIntermediateVecs);
 
-        auto numOfThreads = currentJobContext_.getNumOfThreads();
-        //IntermediatePair==std::pair<K2*, V2*>
-        std::unordered_map<K2*, IntermediateVec> keyToVectorOfPairs;//IntermediateVec==std::vector<IntermediatePair>
-        for (size_t i = 0; i < numOfThreads; ++i){
-            // std::vector<std::pair<K2*, V2*>> sorted by K2
-            auto currIntermediateVec =
-                    currentJobContext_.getThreadContext(i).getIntermediateVec();
-            for(const auto& elem : currIntermediateVec){
-                keyToVectorOfPairs[elem.first].emplace_back(elem);
+        std::vector<IntermediateVec> interVecs;
+        for (size_t i = 0; i < numOfIntermediateVecs; ++i)
+        {
+            interVecs.emplace_back(currentJobContext_.getThreadContext(i).getIntermediateVec());
+        }
+
+        K2* currMaxKey; // Point to the current max key
+        auto &shuffledQueue = currentJobContext_.getShuffledQueue(); // std::vector<IntermediateVec>
+
+        auto getMaxKey = []() {
+            return [](std::vector<IntermediateVec> &interVecs) {
+                K2* maxKey = nullptr;
+                for (const auto &v : interVecs){
+                    if ((maxKey == nullptr && !v.empty()) || (!v.empty() && (*maxKey < *(v.back().first))))
+                        maxKey = v.back().first;
+                }
+                return maxKey;
+            };
+        };
+
+        size_t countProcessedPairs = 0;
+        while ((currMaxKey = getMaxKey()(interVecs)) != nullptr) // Go over all the keys
+        {
+            auto newVec = IntermediateVec(); // Current inter vec to be pushed to shuffled
+                                                // - with current maximum same key
+
+            for (auto &v : interVecs) // Iterate over each thread's inter-vec
+            {
+                while (!v.empty() && !( (*(v.back().first) < *currMaxKey) || *currMaxKey < (*(v.back().first)) ) ) // This inter-vec contains this key?
+                {
+                    newVec.push_back(v.back()); // Then push to the current shuffled inter-vec
+                    v.pop_back();
+
+                    _setPhasePercentage(float(++countProcessedPairs), totalNumOfInterPairs);
+                }
             }
-        }
-        auto shuffledQueue = currentJobContext_.getShuffledQueue(); // std::vector<std::vector<std::pair<K2*, V2*>>>
-        for(const auto& sameKeyPairVector : keyToVectorOfPairs){
-            shuffledQueue.emplace_back(sameKeyPairVector.second);
-        }
 
-        currentJobContext_.setJobStatePercentage(
-                (float(JobContext::getNumOfShuffledPairs(
-                        shuffledQueue)) / numOfIntermediatePairs) * 100);
+            shuffledQueue.push_back(newVec); // Push it to our shuffled queue
+        }
     }
-    // else => you aren't thread-0, so go wait on barrier
+    // else => you aren't thread-0, so go wait on barrier until thread-0 finishes shuffling
+}
+
+void ThreadContext::_setPhasePercentage(float numOfProcessed, size_t total) {
+    currentJobContext_.setJobStatePercentage((numOfProcessed / total) * 100);
 }
 
 void ThreadContext::invokeReducePhase()
 {
     currentJobContext_.setJobStateStage(REDUCE_STAGE);
     size_t numOfShuffleElems = JobContext::getNumOfShuffledPairs(currentJobContext_.getShuffledQueue());
-    size_t ix;
     auto shuffleQueue = currentJobContext_.getShuffledQueue();
+
+    currentJobContext_.resetLastProcessedCounter(); // TODO - multiple threads reset it
+
+    size_t ix;
     while ((ix = currentJobContext_.shuffleAtomicCounter()) < shuffleQueue.size())
     {
         currentJobContext_.invokeClientReduceRoutine(&shuffleQueue[ix],static_cast<void *>(this));
 
-        auto amountOfProcessedElems = currentJobContext_.lastProcessedShuffledElementGetAndIncrement();
-        currentJobContext_.setJobStatePercentage(
-                (float(amountOfProcessedElems) / numOfShuffleElems) * 100);
+        updateCurrentPercentageReduce(shuffleQueue[ix].size(), numOfShuffleElems);
     }
 }
 
