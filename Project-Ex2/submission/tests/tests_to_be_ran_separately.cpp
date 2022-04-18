@@ -438,6 +438,9 @@ TEST(Test6, BasicSleep)
 
         uthread_sleep(sleep_quantums); // Sleep for the next `sleep_quantums` quantums
 
+        // 2 - for the current cumulative quantum
+        // sleep_quantums - for the time to sleep
+        // 1 - for the next main's quantum
         EXPECT_EQ(uthread_get_total_quantums(), 2 + 1 + sleep_quantums);
 
         auto_resumed_f = true; // Indicating successful sleep and resume

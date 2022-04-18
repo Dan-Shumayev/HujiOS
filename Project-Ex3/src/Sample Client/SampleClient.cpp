@@ -31,8 +31,10 @@ public:
 
 class CounterClient : public MapReduceClient {
 public:
-    void map(const K1* key, const V1* value, void* context) const {
-        std::array<int, 256> counts;
+    void map(const K1* key, const V1* value, void* context) const
+    {
+        (void)key;
+        std::array<int, 256> counts{};
         counts.fill(0);
         for(const char& c : static_cast<const VString*>(value)->content) {
             counts[(unsigned char) c]++;
@@ -49,8 +51,7 @@ public:
         }
     }
 
-    virtual void reduce(const IntermediateVec* pairs,
-                        void* context) const {
+    virtual void reduce(const IntermediateVec* pairs, void* context) const {
         const char c = static_cast<const KChar*>(pairs->at(0).first)->c;
         int count = 0;
         for(const IntermediatePair& pair: *pairs) {
@@ -66,7 +67,7 @@ public:
 };
 
 
-int main(int argc, char** argv)
+int main()
 {
     CounterClient client;
     InputVec inputVec;
