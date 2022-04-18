@@ -19,7 +19,7 @@ JobContext::JobContext(const MapReduceClient &client, const InputVec &inputVec, 
   outputVecMutex_(PTHREAD_MUTEX_INITIALIZER),
   shuffleQueAtomicCounter_(0)
   {
-  for (size_t i = 0; i < numOfThreads_ - 1; ++i)
+  for (size_t i = 0; i < numOfThreads_; ++i)
   {
       // construct each of them
       threadContexts_[i] = std::unique_ptr<ThreadContext>(new ThreadContext(i, *this));
@@ -36,7 +36,7 @@ JobContext::~JobContext()
 
 void JobContext::getJobDone()
 {
-    for (size_t i = 0; i < numOfThreads_ - 1; ++i)
+    for (size_t i = 0; i < numOfThreads_; ++i)
     {
         threadContexts_[i]->pthreadJoin();
     }
@@ -53,6 +53,22 @@ void JobContext::lockOutputVecMutex()
 void JobContext::unlockOutputVecMutex()
 {
     if (pthread_mutex_unlock(&outputVecMutex_))
+    {
+        systemError("[[pthread_mutex_unlock]] failed.");
+    }
+}
+
+void JobContext::lockThreadMutex()
+{
+    if (pthread_mutex_lock(&jobStateMutex_))
+    {
+        systemError("[[pthread_mutex_lock]] failed.");
+    }
+}
+
+void JobContext::unlockThreadMutex()
+{
+    if (pthread_mutex_unlock(&jobStateMutex_))
     {
         systemError("[[pthread_mutex_unlock]] failed.");
     }
@@ -78,10 +94,10 @@ size_t JobContext::getNumOfShuffledPairs(std::vector<std::vector<IntermediatePai
 
 size_t JobContext::getNumOfIntermediatePairs()
 {
-    size_t threadSize;
+    size_t threadSize = 0;
     for (size_t i = 0; i < numOfThreads_; ++i)
     {
-        threadSize = getThreadContext(i).getIntermediateVec().size();
+        threadSize += getThreadContext(i).getIntermediateVec().size();
     }
     return threadSize;
 }
