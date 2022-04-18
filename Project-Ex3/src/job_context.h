@@ -1,7 +1,3 @@
-//
-// Created by dan-os on 09/06/2021.
-//
-
 #ifndef EX3_JOB_CONTEXT_H
 #define EX3_JOB_CONTEXT_H
 
@@ -60,9 +56,9 @@ public:
 
     void invokeClientReduceRoutine(const IntermediateVec* pairs, void* context) {client_.reduce(pairs, context);};
 
-    size_t lastThreadAtomicGetIncrement() {return lastThreadWorker_++;};
+    size_t lastThreadAtomicGetIncrement() {return lastThreadWorker_.fetch_add(1);};
 
-    size_t shuffleAtomicCounter() {return shuffleQueAtomicCounter_++;};
+    size_t shuffleAtomicCounter() {return shuffleQueAtomicCounter_.fetch_add(1);};
 
     void barrier() {threadsBarrier_.barrier();};
 
@@ -80,15 +76,23 @@ public:
 
     void updateOutputVector(OutputPair &&outputPair);
 
-    std::vector<std::vector<IntermediatePair>>& getShuffledQueue() {return shuffledQueue_;};
+    std::vector<IntermediateVec>& getShuffledQueue() {return shuffledQueue_;};
 
-    size_t lastProcessedInputElementGetAndIncrement() {return lastProcessedInputElementGetAndIncrement_++;}
+    void resetLastProcessedCounter() {lastProcessedInputElementGetAndIncrement_.store(0);};
 
-    size_t lastProcessedShuffledElementGetAndIncrement() {return lastProcessedShuffledElementGetAndIncrement_++;}
+    size_t lastProcessedInputElementGetAndIncrement() {return 1 + lastProcessedInputElementGetAndIncrement_.fetch_add(1);}
+
+    size_t lastProcessedInputElementGetAndAdd(size_t currAdd) {return currAdd + lastProcessedInputElementGetAndIncrement_.fetch_add(currAdd);}
+
+    size_t lastProcessedShuffledElementGetAndIncrement() {return lastProcessedShuffledElementGetAndIncrement_.fetch_add(1);}
 
     static size_t getNumOfShuffledPairs(std::vector<std::vector<IntermediatePair>> &shuffledQueue) ;
 
     size_t getNumOfIntermediatePairs();
+
+    void lockThreadMutex();
+
+    void unlockThreadMutex();
 };
 
 
