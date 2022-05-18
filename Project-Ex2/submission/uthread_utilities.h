@@ -1,7 +1,3 @@
-//
-// Created by dan-os on 01/06/2021.
-//
-
 #ifndef PROJECT_EX2_UTHREAD_UTILITIES_H
 #define PROJECT_EX2_UTHREAD_UTILITIES_H
 
@@ -13,12 +9,11 @@
 #include <ostream> // std::endl
 
 using threadEntryPoint = void(*)();
-
 using TidToSleepTime = std::pair<int, int>;
 
 const int EXIT_FAIL = -1;
 
-struct cmp
+struct sleepTimeCmp
 {
     bool operator()(const TidToSleepTime &a, const TidToSleepTime &b)
     {

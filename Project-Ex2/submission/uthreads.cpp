@@ -1,7 +1,3 @@
-//
-// Created by dan-os on 31/05/2021.
-//
-
 #include "uthreads.h"          // Library API
 #include "uthread_utilities.h" // Masking
 #include "Scheduler.h"         // Scheduler, SIGVTALRM
@@ -62,15 +58,13 @@ int uthread_sleep(int num_quantums)
 
 int uthread_get_tid()
 {
-    // we aren't masking the timer signal, as this function doesn't affect the library
-    // state (either way we may get stale value)
+    SigMask timer_mask(SIGVTALRM);
     return scheduler_manager->getTid();
 }
 
 int uthread_get_total_quantums()
 {
-    // we aren't masking the timer signal, as this function doesn't affect the library
-    // state (either way we may get stale value)
+    SigMask timer_mask(SIGVTALRM);
     return scheduler_manager->getTotalQuantums();
 }
 
@@ -82,5 +76,10 @@ int uthread_get_quantums(int tid)
 
 void timerHandlerGlobal(int signo)
 {
-    scheduler_manager->timerHandler(signo);
+    if (scheduler_manager) // ASan (Address Sanitizer) reaches this global handler, even after `std::exit(0)` was invoked
+                            // by the main thread. Hence, run the handler only if the scheduler is still running.
+    {
+        // The timer signal is automatically masked by `sigaction`
+        scheduler_manager->timerHandler(signo);
+    }
 }

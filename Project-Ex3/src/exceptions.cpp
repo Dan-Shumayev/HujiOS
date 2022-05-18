@@ -1,13 +1,9 @@
-//
-// Created by dan-os on 12/06/2021.
-//
-
 #include "exceptions.h"
 
 void systemError(const std::string& msg)
 {
     std::cerr << "system error: " << msg << ", errno - " << std::strerror(errno) << std::endl;
-    exit(1);
+    exit(EXIT_FAILURE);
 }
 
 int mapReduceLibraryError(const std::string& msg)

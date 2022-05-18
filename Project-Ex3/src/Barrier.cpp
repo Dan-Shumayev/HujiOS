@@ -26,7 +26,6 @@ void Barrier::barrier()
 	if (pthread_mutex_lock(&mutex) != 0){
         systemError("[[Barrier]] error on pthread_mutex_lock");
     }
-	// TODO - why do we actually need a condition variable here? What's the effect of that?
 	if (++count < numThreads) {
 		if (pthread_cond_wait(&cv, &mutex) != 0){
             systemError("[[Barrier]] error on pthread_cond_wait");

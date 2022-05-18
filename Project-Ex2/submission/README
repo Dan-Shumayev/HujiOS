@@ -1,121 +1,111 @@
-dans, avikog
-Dan Shumayev (207050691), Avi Kogan ()
+dans
+Dan Shumayev (207050691)
 EX: 2
+
 
 FILES:
 README - This file.
-Makefile - Build file, the default rule makes the entire library.
+Makefile - Build file, the default target makes the entire library.
 uthreads.h/cpp       - The provided thread library interface, implemented
                        by invoking various methods of the Scheduler singleton.
-Scheduler.h/cpp - The main module managing the library threads. This is a singleton class that.
+Scheduler.h/cpp - The main module managing the library threads. This is a singleton class.
 thread.h/cpp - Representing a user-thread library, containing some of threads' information
                such as its id, env and stack.
-uthread_utilities.h/cpp   - Utility functionality like timer masking and typedef's.
-uthread_exception.h/cpp     - Thread library error-related information.
+uthread_utilities.h/cpp   - Utility functionality like timer masking and typedef's, error-related information.
+
 
 REMARKS:
 
-- All library functions (except the simple getters) are masked,
-  this was implemented by the 'SigGuard' class which uses the
-  RAII idiom (similar to lock_guard) to mask the function's scope,
-  except for the case of the preempt alarm handler, which was
-  automatically masked due to 'sigaction' behavior
+- The code is heavily commented.
 
-- All library functions+signal handler are guarded against exceptions, via the 'handleExceptions' function, this is done
-  to catch C++ style allocation exceptions (that may occur when allocating threads or moving them between data
-  structures) to 'system errors' as defined in the exercise. Besides that, most
-  error handling is done manually, using the 'systemError' and 'threadLibraryError' functions.
 
-- Deletion of the current thread requires some trickery, because doing so in the stack frame
-  of the current thread is undefined
-  One could think to do so right after sigsetjmp == 0, but this doesn't handle the case where we jump to a thread in
-  the first time. One could so right before sigsetjmp, but again, this function might happen to accidentally allocate
-  memory on the current stack(marked as free).
-  Therefore, I've opted to deal with this by killing it from another thread, at the earliest possible time
-  (next manual thread library call/next preemption)
+ANSWERS:
 
-Theoretical part - answers:
+1. It avoids the overhead that accompanies kernel-level threads which are managed by the kernel.
+    The disadvantage of such multi-threading is that the kernel has to handle the scheduling of the threads,
+    and actually the entire state machine. As mentioned, it includes many system calls which causes trap,
+    which is an overhead we've seen in Ex.1. Examples of using user-level threads: Graphic processing unit (frame as
+    a thread); Green Threads.
 
-1. Question:
-   Describe one general use of user-level threads and explain why they're a reasonable choice for your example.
+2.  - Disadvantages:
+    * "Waste of memory": As each process has its own process sections (text, stack, data, heap), many running processes
+        implies much more memory consumption than would have been with kernel-level threads which shares some of these
+        sections.
 
-   Answer:
-   Rendering of animation is massively parallel as each frame can be
-   rendered independently to others -- meaning that 10's or 100's of computers can be
-   chained together to help out.
+    * Inter-Process Communication overhead: Following the previous con, we see that processes can't share data, but
+        by signals/shared files - which are mechanisms that are delivered by the kernel. This is the exact caveat -
+        going through the kernel requires interrupting the currently running process (system call),
+        in order to let the kernel transfer the signal to the destined process. This overhead is expensive.
 
-   Since we might have thousands of such frames (threads), it would be wasteful to
-   map each frame to a kernel thread as both the memory overhead and context switches
-   would be too large.
+   - Advantages:
+   * Independent preemption/termination: One process's termination doesn't affect the other's, no matter what the cause is.
+        If some tab is lagged/crashed, that won't effect the others' processing function, because they're isolated and
+        independent. In contrast to that, in kernel-level threads, it would terminate all the tabs, as they're one
+        crashing process.
 
-2. Pros and cons of using processes rather than kernel-level threads for Google Chrome app:
-   * Pros:
-   + Protection by isolation: In case of surfing a website that exploits a vulnerability of Chrome's browser,
-                              the attacker may leak sensitive information laying on other sessions invoked by
-                              Chrome's browser. If Google Chrome's app uses only 1 process (multi-threaded),
-                              this information leakage would be something easy to be done, whereas in the case of
-                              a different process for each Chrome's tab, then not only he'd have to exploit the
-                              browser's vuln, but also exploit the OS virtual memory - which would be much harder.
+   * Security: As each process has its own sections, and its own memory in particular, that's safer. That's safer because
+            we can be unworried they are intervening with each other's data, race-conditioning some shared data, possibly
+            resulting in defected values. Moreover, if some malicious attacker hijacks an active session held by one of
+            the processes - it won't help him (essentially avoids) hijack the other processes' active sessions as they're
+            isolated as described.
 
-  + Performance: A Chrome's tab might crash or be suspended for a while. In this case, unless using multi-process
-                 browser, all the tabs may crash because this one malfunctioned tab. Kernel-level threads would reside
-                 inside one same process, resulting in an entire crash of the browser.
 
-  * Cons:
-  - Memory bloat: Lots of tabs lead to many running processes, which consume a lot more memory compared to using threads
+3. c. While pressing keyboard keys, the keyboard controller raises an interrupt
+      to allow the CPU to handle the input. This interrupt halts the currently
+      execution of the CPU -> the CPU traps into the kernel (kernel mode)
+      -> performs a lookup of the suitable routine pointer which is destined to
+      handle this hardware interrupt (which is detected by the respective controller's wires).
+      The lookup table is called IVT - interrupt vector table. -> the CPU jumps into
+      this routine pointer, and executes it, processing the pressed keys from the
+      keyboard's memory segment as needed.
 
-  - CPU overhead: Different processes associated with the browser need to communicate with each other,
-                  and such communication is much slower than that done by threads that use shared memory. Because
-                  processes have to delegate their communication with other processes via the kernel, resulting in
-                  a communicative mediator.
+      These captured keys are displayed on the shell, as it's the currently focused program
+      (as detected by the kernel). The shell processes and gets these keys by durable
+      `select`ing the STDIN file (the above kernel routine is writing the captured keys
+      to this file). The shell is "constantly reading" STDIN and is essentially blocking
+      on it only when new key presses are detected on focus, via the `select` and
+      `read` system calls. These respective characters are written into STDOUT
+      * Extension: how is a key press mapped to its respective graphical character:
+          1. Kernel talks to the USB controller hardware, identifies that you have a device connected,
+          2. queries the device, detects the fact that it's a HID (human interface device),
+          3. queries the keys and the format that the device is able to report according to the HID specification,
+          4. sets the keyboard up to report key press events on the bus and starts polling it.
+          5. While pressing a key, the keyboard reports it according to the reported HID format.
+          6. Kernel receives the event from the controller hardware,
+          7. parses the event according to previously negotiated format and translates into scan codes.
+          8. Certain window manager sets up an even listener on the USB device and asks the kernel to deliver him.
+          9. Kernel forwards key presses to the window manager.
+          10. Window manager forwards key presses over to the currently focused application,
+                i.e our shell in a window manager protocol specific manner.
+          11. Our shell sees that's a key press, converts that into its ascii code.
+          12. Shell runs some renderer code that is able to render fonts with some backend, aka OpenGL.
+          13. OpenGL renderer creates a command buffer necessary to render said character.
+          14. Renderer submits the command buffer to the GPU via a DRM kernel call.
+          15. GPU receives the commands and draws to our shell window buffer.
+          16. Shell tells the window manager that it's updated itself and wants to be shown on screen.
+          17. Window manager submits the window to the compositor for redraw.
+          18. Compositor layouts the windows according to their coordinates and applies various effects.
+          19. Finally the window manager submits the final command buffer that draws composited windows into framebuffer
+          20. Kernel DRM module presents the said framebuffer on the screen via the DRM subsystem according to
+                selected planes/connectors/encoders
 
-3. Interrupts and signals:
-   a. While typing the command to the shell, the keyboard generates hardware
-      interrupts via its interrupt controller, interrupting the processor which stops
-      what it's currently doing, and finds the suitable OS routine to handle the interrupt
-      by inspecting the interrupt vector (IDT), and jumps to it (in kernel mode).
-      The OS routine reads the keys that were pressed (either directly from
-      the keyboard's memory via DMA or from the interrupt request itself).
+      The kill system call: When entering the command `kill <PID-NUMBER>`, a newline arrives at STDIN, causes the
+      shell to call the `kill` system call with the first argument as `<PID-NUMBER>`, and the second is the macro for
+      `SIGTERM` signal (which is the default one). This system call leads to a SIGTERM signal arriving at the passed
+      pid number.
 
-      The aforementioned OS routine determines that we've been typing to the shell (as it has
-      focus) and writes the characters we've been typing to the STDIN file that
-      the shell has opened and is blocking on, via the 'write' syscall.
+      Now, if the signaled process has registered an handler for SIGTERM - it'll execute it at its execution turn.
+      Otherwise, the default signal handler is terminating it.
 
-      The shell is using 'select' to be notified of new characters that arrive to STDIN,
-      and then uses 'read' to read those specific characters. This is different from just
-      reading the entire STDIN file, since it doesn't have to wait for the STDIN file
-      to be closed (which would only happen when we terminate the shell, not something
-      we want) thus allowing the shell to be interactive.
+4. Real time takes into account the "human-known" time, which among other things, takes into account daylight saving
+   time. It's essential for public applications such as websites displaying the current time to the users.
 
-      The shell also writes those same characters to STDOUT.
-
-   b. Once a newline is read, the shell will send a SIGTERM signal to the selected process
-      via the 'kill' system call.
-      Note - kill is a shell builtin, and doesn't involve the creation of a new
-      process unlike most commands.
-
-   c. Since no special handler was specified for SIGTERM, the default signal
-      handler chooses to terminate the chosen program. This causes it to
-      emit SIGCHLD to its parent
-
-4. What is the difference between `real` and `virtual` time? Give an example of using each.
-
-   Virtual time is the time spent by the CPU executing the process's
-   instructions, and doesn't include the time of the syscalls themselves
-   or times during which the process was non-resident, which are included
-   in real time.
-
-   As seen in the exercise, virtual time is useful for assigning each
-   user-thread a constant amount of time, that doesn't fluctuate depending on
-   system load.
-
-   Real time can be used whenever we care about the human concept of time, for
-   example, in a scheduling app.
-
-   An example that uses both times: if your program takes very
-   long (real time) but a time command indicates a very low virtual time, this
-   indicates that there's an IO bottleneck in the program (e.g heavy memory swapping
-   when your program runs out of physical RAM).
+   Virtual time is the time dedicated only to execute a specific process's instructions,
+   without the time spent on interrupts/blocks/preemption (hardware interrupt, system call, etc...).
+   This type of time is useful for protocol benchmarks like measuring network protocols' throughput/bandwidth.
+   We are interested in such benchmarks only in the time spent conducting the protocol related stuff, and not the system
+   ones. Of course, it was also used by our user-level threads library, to let each thread run *its instructions* for
+   a specific amount of time.
 
 5. Describe what the functions `sigsetjmp` and `siglongjmp` do.
 

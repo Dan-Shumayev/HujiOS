@@ -42,8 +42,10 @@ private:
     /** unordered (don't care about the order as there could be "gaps", and no need for order) */
     std::unordered_set<int> blockedThreads_;
 
-    /* TODO - comment */
-    std::multiset<TidToSleepTime, cmp> sleepThreads_;
+    /** multiset holding mappings of sleeping threads - sleeping_tid -> endSleepingQuantum. This multiset utilizes
+     *  a compare function, such that the threads with the lowest `endSleepingQuantum` can be captured by rbegin().
+     *  It's multi-set because there may be several tids with the same `endSleepingQuantum`. */
+    std::multiset<TidToSleepTime, sleepTimeCmp> sleepThreads_;
 
     /** Currently running thread's ID */
     int currentRunningThread_;
@@ -89,7 +91,9 @@ private:
      */
     static void _setTimerSignal(int quantum_usecs);
 
-    /** Looking for possible thread to be terminated from previous execution context, if exists - deleting it */
+    /** Looking for possible thread to be terminated from previous execution context, if exists - deleting it.
+     *  Note: it's manually invoked on each library's function. We avoid deleting immediately when requested because
+     *  in case of terminating itself, the thread will lead to use-after-free of its stack-allocated memory. */
     void _deleteTerminatedThread();
 
 public:
@@ -158,6 +162,24 @@ public:
      * @param signo Here only because of sa_handler function's signature
      */
     void timerHandler(int signo);
+
+    /**
+     * Checks on every quantum whether there are threads that are sleeping and can be wakened up. If there are - it
+     * transitions them into the ready queue, such that they can race with other ready threads at the next turns.
+     */
+    void _sleepToReady();
+
+    std::multiset<TidToSleepTime, sleepTimeCmp>::iterator _isTidSleeping(int tid) const;
+
+    int _getSpawnedThreadReady(threadEntryPoint function, int nextTid);
+
+    void _applySigJmp(const PreemptReason &preemptReason, int nextTid);
+
+    void _setTimer();
+
+    void _terminateOtherThread(int tid);
+
+    int _blockOtherThread(int tid);
 };
 
 /**

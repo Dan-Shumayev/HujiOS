@@ -69,7 +69,8 @@ public:
     int get_quantum_running() const {return numOfQuantum_;}
 
     /**
-     * @return Amount of quantum slots the thread has executed so far
+     * Increment the amount of quantum slots the thread has executed so far
+     * @return None
      */
     void incrementNumOfQuantum() {++numOfQuantum_;}
 
@@ -77,6 +78,12 @@ public:
      * @return The quantum until the time to sleep expires
      */
     int getSleepUntil() const {return sleepUntil_;}
+
+    /**
+     * Set the quantum until which this thread is to be sleeping
+     * @return None
+     */
+    void setSleepUntil(int sleepUntil) {sleepUntil_ = sleepUntil;}
 
     /**
      * @return Returns the thread's environment struct

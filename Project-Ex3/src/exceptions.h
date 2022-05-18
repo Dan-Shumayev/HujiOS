@@ -1,13 +1,8 @@
-//
-// Created by dan-os on 12/06/2021.
-//
-
 #ifndef EX3_EXCEPTIONS_H
 #define EX3_EXCEPTIONS_H
 
 #include <iostream>
 #include <cstring>
-
 
 const int EXIT_FAIL = -1;
 

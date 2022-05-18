@@ -8,7 +8,7 @@
 #define _UTHREADS_H
 
 #define MAX_THREAD_NUM 100 /* maximal number of threads */
-#define STACK_SIZE 8192    /* stack size per thread (in bytes) */ // TODO - change it to 4096!
+#define STACK_SIZE 4096    /* stack size per thread (in bytes) */
 
 typedef void (*thread_entry_point)(void);
 

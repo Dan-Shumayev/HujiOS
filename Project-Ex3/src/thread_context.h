@@ -1,7 +1,3 @@
-//
-// Created by dan-os on 12/06/2021.
-//
-
 #ifndef EX3_THREAD_CONTEXT_H
 #define EX3_THREAD_CONTEXT_H
 
@@ -9,19 +5,9 @@
 #include <cstddef> // size_t
 #include <pthread.h> // pthread_t
 #include <algorithm> // std::sort
-#include <map>
 #include "exceptions.h"
 #include "MapReduceClient.h"
 
-// TODO - use those to implement Shuffle
-struct K2PointerComp {
-    bool operator()(const K2* first, const K2* second) const
-    {
-        return (*first < *second);
-    }
-};
-
-typedef std::map<K2*, std::vector<V2 *>, K2PointerComp> IntermediateMap;
 
 /** forward-declaration to break the include-cycle */
 class JobContext;
@@ -29,31 +15,40 @@ class JobContext;
 class ThreadContext {
 private:
     const size_t thread_id_;
-    pthread_t pthreadThread_; // the actual thread worker from pthread library
-    JobContext& currentJobContext_; // It's a reference (and not a smart pointer) because some of the library
-    // functions receive the job handle as a void*, resulting required static_cast from
-    // a smart pointer (we'd wish to define) into a void*. But, casting a smart pointer
-    // defects its destruction.
+
+    /** the actual thread worker from pthread library */
+    pthread_t pthreadThread_;
+
+    JobContext& currentJobContext_;
+
+    /** It's a reference (and not a smart pointer) because some of the library
+        functions receive the job handle as a void*, resulting required static_cast from
+        a smart pointer (we'd wish to define) into a void*. But, casting a smart pointer
+        defects its destruction. */
     IntermediateVec intermediateVec_;
-    bool isJoined_; // true iff pthread_join was called on pthreadThread
 
 public:
     ThreadContext(size_t tid, JobContext& jobContext);
 
-    static void *_threadEntryPoint(void *context); // TODO - consider implementing separated entry point for thread-0
-                                                        // TODO as he exclusively invokes ShufflePhase
+    /** Internal methods */
 
-    JobContext& getJobContext() {return currentJobContext_;};
+    static void *_threadUniqueEntryPoint(void *context);
 
-    void invokeMapPhase();
+    static void *_threadEntryPoint(void *context);
 
-    void invokeSortPhase();
+    JobContext& _getJobContext() {return currentJobContext_;};
 
-    void invokeShufflePhase();
+    void _invokeMapPhase();
 
-    void invokeReducePhase();
+    void _invokeSortPhase();
 
-    void pthreadJoin();
+    void _invokeShufflePhase();
+
+    void _invokeReducePhase();
+
+    /** External methods */
+
+    void pthreadJoin() const;
 
     void pushIntermediateElem(IntermediatePair&& intermediatePair);
 
