@@ -7,6 +7,8 @@
 #include "Barrier.h" // barrier
 #include <memory> // std::unique_ptr
 #include <atomic> // std::atomic
+#include <map_reduce_utils.h> // ApplyMutex (RAII mutex)
+#include <semaphore.h>
 #include "thread_context.h"
 
 
@@ -18,25 +20,28 @@ private:
     const MapReduceClient& client_;
 
     /** Job-associated data */
-    // TODO - Consider implementing an abstract class describing StageState which MapState/ReduceState
-    //  inherits from so that ThreadContext doesn't have to deal with Output/Intermediate vectors
-    //  explicitly but ThreadContext may may use instance of type like std::unique_ptr<StageState>
-    //  for dealing with these matters.
     const InputVec& inputVec_; // isn't supposed to be modified
-    OutputVec outputVec_; // emit3's outputs
-    JobState currJobState_; // TODO - to be deleted upon implementing the JobStateBitwise_ correctly
+    OutputVec &outputVec_; // emit3's outputs
     /** First 2 bits indicates stage_t (4 options), next 31 bits indicate the
         number of processed elements at the current stage, next 31 bits indicate
         number of total elements to process at this stage */
     std::atomic<std::uint64_t> jobStateBitwise_;
+    std::atomic<std::size_t> atomicNextItemToProcess_;
 
     /** Thread-management */
     size_t numOfThreads_; // amount of working threads
     std::vector<std::unique_ptr<ThreadContext>> threadContexts_; // working threads' context
-    std::atomic<size_t> lastThreadWorker_; // currently last assigned working thread
     Barrier threadsBarrier_; // used to synchronize all threads in between each phase
-    pthread_mutex_t outputVecMutex_; // update of the output vector is a critical section
+    pthread_mutex_t jobStateMutex_; // mutex for job purposes
+    pthread_mutex_t outputVecMutex_; // mutex for atomic update of the output vector
+
+private:
+    // mutex for exclusive update of the output vector
     std::vector<IntermediateVec> shuffledQueue_; // thread-0's data structure for shuffling
+    bool areThreadsJoined_;
+    pthread_mutex_t pthreadCreateMutex_;
+public:
+    pthread_mutex_t &getPthreadCreateMutex();
 
 public:
     /** API functions */
@@ -44,44 +49,47 @@ public:
 
     ~JobContext();
 
+    JobContext(const JobContext&) = delete; // Rule of 5
+    JobContext& operator=(const JobContext&) = delete; // Rule of 5
+    JobContext(JobContext&&) = delete; // Rule of 5
+    JobContext& operator=(JobContext&&) = delete; // Rule of 5
+
     ThreadContext& getThreadContext(size_t ix) {return *threadContexts_[ix];};
 
     size_t getNumOfThreads() const {return numOfThreads_;};
 
     const InputVec &getInputVector() const {return inputVec_;};
 
-    size_t getNumOfInputElems() const {return inputVec_.size();};
+    size_t getNumOfInputPairs() const {return inputVec_.size();};
 
     void invokeClientMapRoutine(const K1* key, const V1* value, void* context) {client_.map(key, value, context);};
 
     void invokeClientReduceRoutine(const IntermediateVec* pairs, void* context) {client_.reduce(pairs, context);};
 
-    size_t lastThreadAtomicGetIncrement() {return lastThreadWorker_.fetch_add(1);};
-
     void barrier() {threadsBarrier_.barrier();};
 
     void getJobDone();
 
-    JobState getJobState() const {return currJobState_;};
+    JobState getJobState();
 
-    void setJobStateStage(stage_t currentStage) { currJobState_.stage = currentStage;};
-
-    void setJobStatePercentage(float currentPercent) { currJobState_.percentage = currentPercent;};
+    void setJobStage(stage_t currentStage);
 
     void updateOutputVector(OutputPair &&outputPair);
 
     std::vector<IntermediateVec>& getShuffledQueue() {return shuffledQueue_;};
 
-    static size_t getNumOfShuffledPairs(std::vector<std::vector<IntermediatePair>> &shuffledQueue) ;
-
     size_t getNumOfIntermediatePairs();
 
-    size_t atomicCounter() {return jobStateBitwise_++;}; // TODO - do the increment correctly
+    void setNextPhase();
+
+    size_t getNextItemToProcess();
+
+    void resetAtomicNextItemToProcess() {atomicNextItemToProcess_.store(0);};
+
+    void addNumberOfProcessedItems(stage_t currStage = UNDEFINED_STAGE, size_t amount = 1);
 
     /** Private methods - internal purposes */
-    void _lockOutputVecMutex(); // TODO - consider creating a wrapper class to lock/unlock mutexes
-
-    void _unlockOutputVecMutex();
+    float _getTotalItemsOfCurrPhase(const JobState &currJobState);
 };
 
 

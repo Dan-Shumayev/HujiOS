@@ -2,8 +2,8 @@ CC=g++
 CXX=g++
 RANLIB=ranlib
 
-LIBH= Barrier.h job_context.h exceptions.h thread_context.h
-LIBSRC=MapReduceFramework.cpp Barrier.cpp job_context.cpp thread_context.cpp exceptions.cpp
+LIBH= Barrier.h job_context.h exceptions.h thread_context.h map_reduce_utils.h
+LIBSRC=MapReduceFramework.cpp Barrier.cpp job_context.cpp thread_context.cpp exceptions.cpp map_reduce_utils.cpp
 LIBOBJ=$(LIBSRC:.cpp=.o)
 
 INCS=-I.

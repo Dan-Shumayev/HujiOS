@@ -27,13 +27,12 @@ private:
         defects its destruction. */
     IntermediateVec intermediateVec_;
 
-    /** true iff pthread_join was called on pthreadThread */
-    bool isJoined_;
-
 public:
     ThreadContext(size_t tid, JobContext& jobContext);
 
     /** Internal methods */
+
+    static void *_threadUniqueEntryPoint(void *context);
 
     static void *_threadEntryPoint(void *context);
 
@@ -47,11 +46,9 @@ public:
 
     void _invokeReducePhase();
 
-    void _setPhasePercentage(float numOfProcessed, size_t total);
-
     /** External methods */
 
-    void pthreadJoin();
+    void pthreadJoin() const;
 
     void pushIntermediateElem(IntermediatePair&& intermediatePair);
 

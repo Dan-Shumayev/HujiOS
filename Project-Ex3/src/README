@@ -13,7 +13,8 @@ job_context.h - class describing JobContext object, which represents a job handl
 job_context.cpp - implementation of JonContext class, using another class of ThreadContext wrapping pthread_t
 thread_context.h - wrapper of pthread_t. it manages the threads' work on JobContext
 thread_context.cpp - implementation of ThreadContext class
-
+map_reduce_utils.h - header file for implementing RAII idiom for managing mutex primitive
+map_reduce_utils.cpp  - implementation of RAII mutex
 
 REMARKS:
 
