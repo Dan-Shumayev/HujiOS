@@ -3,8 +3,6 @@
 #include <climits>
 #include <stdint.h>
 
-
-
 #ifdef TEST_CONSTANTS
 
 #define OFFSET_WIDTH 1
@@ -48,30 +46,30 @@
 
 #endif
 
-
 /* ----------- common to all constant configurations -------------- */
 
-// word
+/** word */
 typedef int word_t;
 
-// number of bits in a word
+/** number of bits in a word (word_t) */
 #define WORD_WIDTH (sizeof(word_t) * CHAR_BIT)
 
-// page/frame size in words
-// in this implementation this is also the number of entries in a table
+/** page|frame size in words (sizeof(word_t))
+  * Note: in this implementation this is also the number of entries in a table */
 #define PAGE_SIZE (1LL << OFFSET_WIDTH)
 
-// RAM size in words
+/** RAM size in words (sizeof(word_t)) */
 #define RAM_SIZE (1LL << PHYSICAL_ADDRESS_WIDTH)
 
-// virtual memory size in words
+/** Virtual memory size in words (sizeof(word_t)) */
 #define VIRTUAL_MEMORY_SIZE (1LL << VIRTUAL_ADDRESS_WIDTH)
 
-// number of frames in the RAM
+/** Number of frames in the RAM */
 #define NUM_FRAMES (RAM_SIZE / PAGE_SIZE)
 
-// number of pages in the virtual memory
+/** Number of pages in the virtual memory */
 #define NUM_PAGES (VIRTUAL_MEMORY_SIZE / PAGE_SIZE)
 
-#define CEIL(VARIABLE) ( (VARIABLE - (int)VARIABLE)==0 ? (int)VARIABLE : (int)VARIABLE+1 )
+#define CEIL(VARIABLE) ( ((VARIABLE) - (int)(VARIABLE))==0 ? (int)(VARIABLE) : (int)(VARIABLE)+1 )
+
 #define TABLES_DEPTH CEIL((((VIRTUAL_ADDRESS_WIDTH - OFFSET_WIDTH) / (double)OFFSET_WIDTH)))

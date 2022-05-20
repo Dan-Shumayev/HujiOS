@@ -22,14 +22,14 @@ void initialize() {
     RAM.resize(NUM_FRAMES, page_t(PAGE_SIZE));
 }
 
+
 void PMread(uint64_t physicalAddress, word_t* value) {
     if (RAM.empty())
         initialize();
 
     assert(physicalAddress < RAM_SIZE);
 
-    *value = RAM[physicalAddress / PAGE_SIZE][physicalAddress
-             % PAGE_SIZE];
+    *value = RAM[physicalAddress / PAGE_SIZE][physicalAddress % PAGE_SIZE];
 
 #ifdef INC_TESTING_CODE
     Trace::stream() << "PMread(" << physicalAddress << ") = " << *value << std::endl;
