@@ -47,40 +47,75 @@ uint64_t fetchDepthOffset(uint64_t address, uint64_t depth)
     return fetchOffset(fetchedPageByShift);
 }
 
+word_t evict(word_t frame)
+{
+    // TODO - implement evict()
+//    word_t unusedFrame = 0;
+//    word_t rowValue;
+//
+//    for (word_t rowIdx = 0; rowIdx < PAGE_SIZE; ++rowIdx)
+//    {
+//        PMread(currFrame + rowIdx, &rowValue);
+//
+//        if (rowValue != 0)
+//        {
+//            currMaxFrame =  currMaxFrame < rowValue ? rowValue : currMaxFrame;
+//
+//            unusedFrame = createFrame(rowValue, depth + 1);
+//        }
+//    }
+//
+//    if (unusedFrame == 0)
+//    {
+//        return currMaxFrame < NUM_FRAMES - 1 ? currMaxFrame + 1 : evict();
+//    }
+//
+    return 0;
+}
+
 /**
  *
+ * @param currMaxFrame
+ * @param currFrame
+ * @param currDepth
  * @return
  */
-word_t createFrame(word_t currFrame, uint64_t depth = 0, word_t currMaxFrame = 0)
-{ // TODO - to be validated and to implement evict()
-    // TODO - currMaxFrame - we must introduce a new function to traverse the entire tree to find
-    //    the max used frame, as in this function we're traversing only a sub-tree
-    if (depth == TABLES_DEPTH)
+void getMaxUsedFrame(word_t &currMaxFrame, word_t currFrame = 0, uint64_t currDepth = 0)
+{
+    if (currDepth == TABLES_DEPTH)
     {
-        return currMaxFrame < NUM_FRAMES - 1 ? currMaxFrame + 1 : evict();
+        return;
     }
 
-    word_t unusedFrame = 0;
-    word_t rowValue;
+    word_t nextFrame;
 
-    for (word_t rowIdx = 0; rowIdx < PAGE_SIZE; ++rowIdx)
+    for (word_t frameRow = 0; frameRow < PAGE_SIZE; ++frameRow)
     {
-        PMread(currFrame + rowIdx, &rowValue);
+        PMread(currFrame * PAGE_SIZE + frameRow, &nextFrame);
 
-        if (rowValue != 0)
+        if (nextFrame != 0)
         {
-            currMaxFrame =  currMaxFrame < rowValue ? rowValue : currMaxFrame;
+            if (nextFrame > currMaxFrame)
+            {
+                currMaxFrame = nextFrame;
+            }
 
-            unusedFrame = createFrame(rowValue, depth + 1, currMaxFrame);
+            getMaxUsedFrame(currMaxFrame, nextFrame, currDepth + 1);
         }
     }
+}
 
-    if (unusedFrame == 0) // TODO - check if necessary / refactor
-    {
-        return currMaxFrame < NUM_FRAMES - 1 ? currMaxFrame + 1 : evict();
-    }
+/**
+ *
+ * @param currFrame
+ * @return
+ */
+word_t createFrame(word_t currFrame)
+{
+    word_t maxFrame = 0;
 
-    return 0;
+    getMaxUsedFrame(maxFrame);
+    return maxFrame < NUM_FRAMES - 1 ? maxFrame + 1 : evict(currFrame);
 }
 
 /** This function finds a frame associated with the given virtual address.
@@ -102,7 +137,7 @@ uint64_t findFrame(uint64_t pageAddress)
 
         if (nextFrame == 0) // hit an empty frame
         {
-            nextFrame = createFrame(currFrame, currDepth);
+            nextFrame = createFrame(currFrame);
             PMwrite(currFrame * PAGE_SIZE + currOffset, nextFrame);
         }
 
