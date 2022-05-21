@@ -16,6 +16,8 @@ std::unique_ptr<std::stringstream> Trace::ss (new std::stringstream());
 typedef std::vector<word_t> page_t;
 
 std::vector<page_t> RAM;
+
+/** Maps virtual addresses to their page table on disk. */
 std::unordered_map<uint64_t, page_t> swapFile;
 
 void initialize() {

@@ -1,15 +1,6 @@
 #include "VirtualMemory.h"
 #include "PhysicalMemory.h"
 
-typedef struct result // TODO
-{
-    uint64_t IdxFrame;
-    uint64_t frameFather;
-    uint64_t pageNum;
-    uint64_t offset;
-    int frameDepth;
-} result;
-
 /**
  * This function clears a single table held inside the physical memory.
  *
@@ -25,52 +16,106 @@ void clearTable(uint64_t frameIndex)
     }
 }
 
+/**
+ *
+ * @param virtualAddress
+ * @return
+ */
 uint64_t fetchOffset(uint64_t virtualAddress)
 {
     return virtualAddress & ((1ULL << OFFSET_WIDTH) - 1);
 }
 
+/**
+ *
+ * @param virtualAddress
+ * @return
+ */
 uint64_t fetchPageAddress(uint64_t virtualAddress) { return virtualAddress >> OFFSET_WIDTH; }
 
-/**
- * This function calculates the current offset according to a given address and depth.
+/** .... All offsets are of the same size ...
  *
- * @param virtualAddress ...
- * @param depth ...
- * @return ...
+ * @param address
+ * @param depth
+ * @return
  */
-uint64_t fetchDepthOffset(uint64_t virtualAddress, int depth) // TODO
+uint64_t fetchDepthOffset(uint64_t address, uint64_t depth)
 {
-    return fetchOffset(((virtualAddress >> ((TABLES_DEPTH - depth - 1) * OFFSET_WIDTH))));
+    auto shiftRightByOffsetWidth = (TABLES_DEPTH - depth - 1) * OFFSET_WIDTH;
+    auto fetchedPageByShift = address >> shiftRightByOffsetWidth;
+
+    return fetchOffset(fetchedPageByShift);
 }
 
 /**
- * This function calculates the cyclic distance between two pages.
  *
- * @param pageSwappedIn - the original page ...
- * @param p - the currently checked page ...
- * @return the cyclic distance ...
+ * @return
  */
-uint64_t cyclicDistance(uint64_t pageSwappedIn, uint64_t p) // TODO
-{
-    auto absVar = p > pageSwappedIn ? p - pageSwappedIn : pageSwappedIn - p;
-    auto v1 = NUM_PAGES - absVar;
+word_t createFrame(word_t currFrame, uint64_t depth = 0, word_t currMaxFrame = 0)
+{ // TODO - to be validated and to implement evict()
+    // TODO - currMaxFrame - we must introduce a new function to traverse the entire tree to find
+    //    the max used frame, as in this function we're traversing only a sub-tree
+    if (depth == TABLES_DEPTH)
+    {
+        return currMaxFrame < NUM_FRAMES - 1 ? currMaxFrame + 1 : evict();
+    }
 
-    return v1 <= absVar ? v1 : absVar;
+    word_t unusedFrame = 0;
+    word_t rowValue;
+
+    for (word_t rowIdx = 0; rowIdx < PAGE_SIZE; ++rowIdx)
+    {
+        PMread(currFrame + rowIdx, &rowValue);
+
+        if (rowValue != 0)
+        {
+            currMaxFrame =  currMaxFrame < rowValue ? rowValue : currMaxFrame;
+
+            unusedFrame = createFrame(rowValue, depth + 1, currMaxFrame);
+        }
+    }
+
+    if (unusedFrame == 0) // TODO - check if necessary / refactor
+    {
+        return currMaxFrame < NUM_FRAMES - 1 ? currMaxFrame + 1 : evict();
+    }
+
+    return 0;
 }
 
-/**
- * This function gets a result struct and performs all the needed implementations related to it.
+/** This function finds a frame associated with the given virtual address.
  *
- * @maxCycResult ...
+ * @param pageAddress
+ * @return
  */
-void doEvict(result &maxCycResult) // TODO
+uint64_t findFrame(uint64_t pageAddress)
 {
-    PMwrite(maxCycResult.frameFather * PAGE_SIZE + maxCycResult.offset,0);
-    // write zero in the father of the evicted frame, to unlink the evicted son from his father.
-    PMevict(maxCycResult.IdxFrame, maxCycResult.pageNum);
-    clearTable(maxCycResult.IdxFrame);
+    word_t currFrame = 0;
+    auto currOffset = 0ULL;
+    word_t nextFrame;
+
+    for (auto currDepth = 0; currDepth < TABLES_DEPTH; ++currDepth)
+    {
+        currOffset = fetchDepthOffset(pageAddress, currDepth);
+
+        PMread(currFrame * PAGE_SIZE + currOffset, &nextFrame);
+
+        if (nextFrame == 0) // hit an empty frame
+        {
+            nextFrame = createFrame(currFrame, currDepth);
+            PMwrite(currFrame * PAGE_SIZE + currOffset, nextFrame);
+        }
+
+        currFrame = nextFrame;
+    }
+
+    // It's a no-op in case the page is already in the RAM
+    PMrestore(currFrame, pageAddress);
+
+    return currFrame;
 }
+
+/** ** Paging interface ** */
 
 /**
  * Initialize the virtual memory.
@@ -82,117 +127,6 @@ void VMinitialize()
         clearTable(i);
     }
 }
-
-/**
- * This function searches for frame using dfs algorithm
- * @param originFrameIdx- the original frame
- * @param pageToCheck - the original page number
- * @return
- */
-uint64_t getUnusedFrame(uint64_t originFrameIdx, uint64_t pageToCheck) // TODO
-{
-    result maxCycResult  {0,0,0,0,0};
-    result arrFrames[TABLES_DEPTH * PAGE_SIZE]; //arr that holds the current frame and it's suns
-    result *startFrame = arrFrames;
-    *startFrame = result{0, 0, 0, 0, 0};
-    ++startFrame;
-    uint64_t maxFrame = 0;
-    uint64_t maxCyc = 0;
-    uint64_t curDist = 0;
-
-    while(arrFrames != startFrame) // as long as the arr holds frames
-    {
-        --startFrame;
-        result frameStruct = *startFrame;
-        bool emptyTable = true;
-
-        if (frameStruct.IdxFrame >= maxFrame)
-        {
-            maxFrame = frameStruct.IdxFrame;
-        }
-        if (frameStruct.frameDepth == TABLES_DEPTH)
-        {
-            curDist = cyclicDistance(pageToCheck, frameStruct.pageNum); // calc this frames
-            //cyc dist
-            if (curDist > maxCyc)
-            {
-                maxCyc = curDist;
-                maxCycResult = frameStruct;
-            }
-            continue;
-        }
-
-        for(uint64_t i = 0; i < PAGE_SIZE; ++ i)
-        {
-            word_t childFrame = 0;
-            PMread(frameStruct.IdxFrame * PAGE_SIZE + i, &childFrame);
-
-            if (childFrame != 0) // frame has child
-            {
-                emptyTable = false; // cur table is not empty
-
-                int depthToAdd = frameStruct.frameDepth + 1;
-                uint64_t pageToAdd = (frameStruct.pageNum << OFFSET_WIDTH) + i;
-                *startFrame = result{(uint64_t)childFrame, frameStruct.IdxFrame, pageToAdd, i,
-                                     depthToAdd};
-                ++ startFrame ;
-            }
-        }
-        if ((frameStruct.IdxFrame != originFrameIdx) && emptyTable)
-        {
-            PMwrite(frameStruct.frameFather * PAGE_SIZE + frameStruct.offset,
-                    0); //write zero
-            uint64_t foundFrameIdx = frameStruct.IdxFrame;
-            return foundFrameIdx;
-        }
-    }
-
-    if (NUM_FRAMES > maxFrame + 1) // not all frames are used
-    {
-        uint64_t foundFrameIdx = maxFrame + 1;
-        return foundFrameIdx;
-    }
-    else // we can't find unused frame, we need to evict
-    {
-        doEvict(maxCycResult);
-        uint64_t foundFrameIdx = maxCycResult.IdxFrame;
-        return foundFrameIdx;
-    }
-}
-
-/** This function finds a frame associated with the given virtual address.
- * ...
- *
- * @param virtualAddress - the virtual address to find a frame for.
- * @return ...
- */
-uint64_t findFrame(uint64_t virtualAddress) // TODO
-{
-    auto page = fetchPageAddress(virtualAddress);
-
-    auto currFrame = 0ULL;
-    auto currOffset = 0ULL;
-    word_t nextFrame;
-
-    for (auto currDepth = 0; currDepth < TABLES_DEPTH; ++currDepth)
-    {
-        currOffset = fetchDepthOffset(page, currDepth);
-
-        PMread(currFrame * PAGE_SIZE + currOffset, &nextFrame);
-
-        if (nextFrame == 0) // hit an empty frame
-        {
-            nextFrame = getUnusedFrame(currFrame, page);
-            PMwrite(currFrame * PAGE_SIZE + currOffset, nextFrame);
-        }
-
-        currFrame = nextFrame;
-    }
-
-    PMrestore(currFrame, page);
-    return currFrame;
-}
-
 
 /** This function reads a word from the given virtual address.
  *
@@ -208,7 +142,7 @@ int VMread(uint64_t virtualAddress, word_t* value)
         return 0;
     }
 
-    uint64_t frameIndex = findFrame(virtualAddress);
+    uint64_t frameIndex = findFrame(fetchPageAddress(virtualAddress));
     uint64_t offset = fetchOffset(virtualAddress);
 
     auto physicalAddress = frameIndex * PAGE_SIZE + offset;
@@ -231,7 +165,7 @@ int VMwrite(uint64_t virtualAddress, word_t value)
         return 0;
     }
 
-    uint64_t frameIndex = findFrame(virtualAddress);
+    uint64_t frameIndex = findFrame(fetchPageAddress(virtualAddress));
     uint64_t offset = fetchOffset(virtualAddress);
 
     auto physicalAddress = frameIndex * PAGE_SIZE + offset;
