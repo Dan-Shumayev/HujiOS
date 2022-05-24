@@ -1,3 +1,4 @@
+cmake-build.
 *Elad*
 *Shir*
 # Prerequisites
@@ -35,6 +36,7 @@
 
 #Make*
 #!Makefile
+#
 #README_*
 GNU*
 .idea/

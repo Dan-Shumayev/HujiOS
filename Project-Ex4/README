@@ -1,0 +1,15 @@
+dans, ita_afrimi
+Dan Shumayev 207050691, Itamar Afrimi 209499664
+EX: 4
+
+FILES:
+
+VirtualMemory.cpp - In this file we're implementing our multi-level paging as described in class.
+README - This file.
+Makefile - Building this paging library.
+
+REMARKS:
+
+- The source code is heavily commented and documented.
+	Note: This implementation contains 3 prominent pieces of code: VMread(), VMwrite() and createFrame().
+* The logic of the code stems from the flow example given with the exercise.
