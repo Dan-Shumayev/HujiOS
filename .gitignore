@@ -33,11 +33,11 @@
 *.out
 *.app
 
-Make*
-!Makefile
-README_*
+#Make*
+#!Makefile
+#README_*
 GNU*
 .idea/
 *.swp
-cmake*
-CMake*
+#cmake*
+#CMake*
