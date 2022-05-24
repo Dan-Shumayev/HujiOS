@@ -2,8 +2,7 @@ CC=g++
 CXX=g++
 RANLIB=ranlib
 
-LIBH= VirtualMemory.h PhysicalMemory.h MemoryConstants.h
-LIBSRC=VirtualMemory.cpp PhysicalMemory.cpp
+LIBSRC=VirtualMemory.cpp
 LIBOBJ=$(LIBSRC:.cpp=.o)
 
 INCS=-I.
@@ -16,7 +15,7 @@ TARGETS = $(VIRTUALMEMORYLIB)
 TAR=tar
 TARFLAGS=-cvf
 TARNAME=ex4.tar
-TARSRCS=$(LIBSRC) $(LIBH) Makefile README
+TARSRCS=$(LIBSRC) Makefile README
 
 all: $(TARGETS)
 
@@ -32,4 +31,5 @@ depend:
 
 tar:
 	$(TAR) $(TARFLAGS) $(TARNAME) $(TARSRCS)
+
 
