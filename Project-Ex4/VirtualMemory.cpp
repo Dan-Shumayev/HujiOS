@@ -140,8 +140,8 @@ void getUnusedFrame(word_t &unusedFrame, word_t usedNullifiedFrame = 0, uint64_t
             reached = true;
 
             auto parent = currFrame;
-//            currFrame = childFrame;
-            getUnusedFrame(unusedFrame, usedNullifiedFrame, currDepth + 1, childFrame, parent * PAGE_SIZE + rowIdx);
+            getUnusedFrame(unusedFrame, usedNullifiedFrame, currDepth + 1, childFrame,
+                           parent * PAGE_SIZE + rowIdx);
         }
     }
 
@@ -157,7 +157,7 @@ void getUnusedFrame(word_t &unusedFrame, word_t usedNullifiedFrame = 0, uint64_t
  * @param currFrame
  * @return
  */
-word_t createFrame(uint64_t page, word_t isUsed)
+word_t createFrame(uint64_t page, word_t isUsed, uint64_t depth)
 {
     word_t frame = 0;
     getUnusedFrame(frame, isUsed); // O(n)
@@ -182,7 +182,9 @@ word_t createFrame(uint64_t page, word_t isUsed)
     evict(page, maxCycDist, pageToEvict, evictedFrame, mappedFromAddress);
 
     PMevict(evictedFrame, pageToEvict);
-    clearTable(evictedFrame); // Mid-level page-fault
+    if (depth < static_cast<uint64_t>(TABLES_DEPTH) - 1) {
+        clearTable(evictedFrame); // Mid-level page-fault
+    }
     PMwrite(mappedFromAddress, 0);
 
     return evictedFrame;
@@ -208,7 +210,7 @@ uint64_t findFrame(uint64_t pageAddress)
 
         if (nextFrame == 0) // hit an empty frame
         {
-            nextFrame = createFrame(pageAddress, currFrame);
+            nextFrame = createFrame(pageAddress, currFrame, currDepth);
             PMwrite(physicalAddress, nextFrame);
         }
 
