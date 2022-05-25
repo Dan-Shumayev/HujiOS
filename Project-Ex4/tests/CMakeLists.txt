@@ -45,7 +45,7 @@ endif()
 
 # If you have your own test files you'd like to add, do so below
 set(test_sources kb_tests.cpp Common.h)
-set(test_compile_options -Wall -Wextra -g -O1)
+set(test_compile_options -Wall -Wextra -g -O2)
 
 # Do not modify this function
 function(createTestTarget testTargetName libraryTargetName)

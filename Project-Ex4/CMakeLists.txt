@@ -14,7 +14,7 @@ set(vm_source_files
         # add your own files here
         )
 
-set(vm_compile_options -Wall -Wextra -g -O0)
+set(vm_compile_options -Wall -Wextra -g -O2)
 
 
 # ------------ Do not modify anything below these lines ------------- #
