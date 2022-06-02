@@ -13,7 +13,7 @@ the instructions, try them on the Aquarium.
 
 2. Copy all files from `copy_to_your_project/` into your project's root directory.
 
-   These include PhysicalMemory with some changes that allow the tests to track evict/restore operations,
+   These include PhysicalMemory with some changes that allow the tests to track findFrameToEvict/restore operations,
    as well as an alternative set of memory constants, depending on preprocessor flag.
    
 3. Use the following for `YOUR_PROJECT_ROOT/CMakeLists.txt`:

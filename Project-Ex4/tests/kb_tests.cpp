@@ -88,8 +88,7 @@ TEST(FlowTests, FlowTest)
     PMread(15, &valueAtPhysAddr15);
     ASSERT_EQ(valueAtPhysAddr15, 0) << "Nothing in thee've touched physical address 14";
     // the virtual address 31 will map to physical address 15 (see PDF why this is true)
-    PMwrite(15, 7331); // TODO: it's unchanged by the next line as we don't call it directly (?)
-//    VMwrite(31, 7331); // This way it succeeds
+    PMwrite(15, 7331);
 
     ASSERT_EQ(VMread(31, &gotten), 1) << "VMread(31, &gotten) should succeed";
     expectedAddrToValMap = {
@@ -292,8 +291,6 @@ const bool PERFORM_INTERMEDIATE_CHECKS = true;
  **/
 TEST(SimpleTests, Can_Read_Then_Write_Memory_Original)
 {
-    // TODO: fails under OffsetDifferentThanIndex
-
     fullyInitialize(InitializationMethod::ZeroMemory);
     setLogging(true);
 

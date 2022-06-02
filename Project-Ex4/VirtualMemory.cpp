@@ -5,6 +5,8 @@
 #include <cmath> // abs()
 
 
+/** ** Helper functions ** */
+
 /**
  * This function clears a single table held inside the physical memory.
  *
@@ -27,7 +29,9 @@ void clearTable(uint64_t frameIndex)
  */
 uint64_t fetchOffset(uint64_t virtualAddress)
 {
-    return virtualAddress & ((1ULL << OFFSET_WIDTH) - 1);
+    auto maskedBits = (1ULL << OFFSET_WIDTH) - 1;
+
+    return virtualAddress & maskedBits;
 }
 
 /**
@@ -43,7 +47,7 @@ uint64_t fetchPageAddress(uint64_t virtualAddress) { return virtualAddress >> OF
  * @param depth
  * @return
  */
-uint64_t fetchDepthOffset(uint64_t address, uint64_t depth)
+uint64_t fetchDepthOffset(uint64_t &address, uint64_t &depth)
 {
     auto shiftRightByOffsetWidth = (TABLES_DEPTH - depth - 1) * OFFSET_WIDTH;
     auto fetchedPageByShift = address >> shiftRightByOffsetWidth;
@@ -51,25 +55,42 @@ uint64_t fetchDepthOffset(uint64_t address, uint64_t depth)
     return fetchOffset(fetchedPageByShift);
 }
 
-void evict(uint64_t page, int &maxCycDist, uint64_t &pageToEvict, word_t &evictedFrame,
-           uint64_t &unusedMappedFrameAdd, uint64_t addressInParent = 0, uint64_t depth = 0,
-           word_t currFrame = 0, uint64_t byPath = 0)
+/**
+ *
+ * @param page
+ * @param maxCycDist
+ * @param addressInParent
+ * @param currFrame
+ * @param currLeafPage
+ * @param evictedAddressInParent
+ * @param evictedFrame
+ * @param pageToEvict
+ */
+void computeAndUpdateMaxCycDist(uint64_t page, int &maxCycDist, uint64_t addressInParent, word_t currFrame,
+                                uint64_t currLeafPage, uint64_t &evictedAddressInParent, word_t &evictedFrame,
+                                uint64_t &pageToEvict)
+{
+    auto absDelta = abs(static_cast<int>(page - currLeafPage));
+    auto cycDist = std::min(static_cast<int>NUM_PAGES - absDelta, absDelta);
+
+    if (cycDist > maxCycDist)
+    {
+        maxCycDist = cycDist;
+
+        evictedFrame = currFrame;
+        pageToEvict = currLeafPage;
+        evictedAddressInParent = addressInParent;
+    }
+}
+
+void findFrameToEvict(uint64_t page, int &maxCycDist, uint64_t &pageToEvict, word_t &evictedFrame,
+                      uint64_t &evictedAddressInParent, uint64_t addressInParent = 0, uint64_t depth = 0,
+                      word_t currFrame = 0, uint64_t currLeafPage = 0)
 {
     if (depth == TABLES_DEPTH) // It's a leaf ==> actual page ==> cyclicDistance
     {
-        auto p = byPath;
-        auto absDelta = abs(static_cast<int>(page - p));
-        auto cycDist = std::min((int)NUM_PAGES - absDelta, absDelta);
-
-        if (cycDist > maxCycDist)
-        {
-            evictedFrame = currFrame;
-            unusedMappedFrameAdd = addressInParent;
-            pageToEvict = p;
-
-            maxCycDist = cycDist;
-        }
-
+        computeAndUpdateMaxCycDist(page, maxCycDist, addressInParent, currFrame, currLeafPage,
+                                   evictedAddressInParent, evictedFrame, pageToEvict);
         return;
     }
 
@@ -77,117 +98,125 @@ void evict(uint64_t page, int &maxCycDist, uint64_t &pageToEvict, word_t &evicte
 
     for (word_t rowIdx = 0; rowIdx < PAGE_SIZE; ++rowIdx)
     {
-        PMread(currFrame * PAGE_SIZE + rowIdx, &nextFrame);
+        auto physicalAddress = currFrame * PAGE_SIZE + rowIdx;
+        PMread(physicalAddress, &nextFrame);
 
         if (nextFrame != 0)
         {
-            evict(page, maxCycDist, pageToEvict, evictedFrame, unusedMappedFrameAdd,
-                  currFrame * PAGE_SIZE + rowIdx, depth + 1,
-                  nextFrame, (byPath << OFFSET_WIDTH) + rowIdx);
+            findFrameToEvict(page, maxCycDist, pageToEvict, evictedFrame, evictedAddressInParent,
+                             physicalAddress, depth + 1,nextFrame,
+                             (currLeafPage << OFFSET_WIDTH) + rowIdx);
         }
     }
 }
 
 /**
  *
- * @param currMaxFrame
- * @param currFrame
+ * @param unusedFrame
+ * @param unusedAddressInParent
+ * @param maxFrame
+ * @param usedEmptyFrame
  * @param currDepth
- * @return
+ * @param currFrame
+ * @param cameFromPhysicalAddress
  */
-void getMaxUsedFrame(word_t &currMaxFrame, word_t currFrame = 0, uint64_t currDepth = 0)
+void getUnusedOrMaxFrame(word_t &unusedFrame, uint64_t &unusedAddressInParent, word_t &maxFrame,
+                         word_t usedEmptyFrame = 0, uint64_t currDepth = 0,
+                         word_t currFrame = 0, uint64_t cameFromPhysicalAddress = 0)
 {
-    if (currDepth == TABLES_DEPTH)
-    {
-        return;
-    }
-
-    word_t nextFrame;
-
-    for (word_t frameRow = 0; frameRow < PAGE_SIZE; ++frameRow)
-    {
-        PMread(currFrame * PAGE_SIZE + frameRow, &nextFrame);
-
-        if (nextFrame != 0)
-        {
-            if (nextFrame > currMaxFrame)
-            {
-                currMaxFrame = nextFrame;
-            }
-
-            getMaxUsedFrame(currMaxFrame, nextFrame, currDepth + 1);
-        }
-    }
-}
-
-void getUnusedFrame(word_t &unusedFrame, word_t usedNullifiedFrame = 0, uint64_t currDepth = 0, word_t currFrame = 0,
-                    uint64_t cameFromAddress = 0)
-{
-    if (currDepth == TABLES_DEPTH)
+    if (currDepth == TABLES_DEPTH) // No more nodes in this branch
     {
         return;
     }
 
     word_t childFrame;
-    bool reached = false;
+    bool hasChildren = false;
 
     for (word_t rowIdx = 0; rowIdx < PAGE_SIZE; ++rowIdx)
     {
-        PMread(currFrame * PAGE_SIZE + rowIdx, &childFrame);
+        auto physicalAddress = currFrame * PAGE_SIZE + rowIdx;
+        PMread(physicalAddress, &childFrame);
 
         if (childFrame != 0)
         {
-            reached = true;
+            maxFrame = maxFrame < childFrame ? childFrame : maxFrame;
+            hasChildren = true;
 
-            auto parent = currFrame;
-            getUnusedFrame(unusedFrame, usedNullifiedFrame, currDepth + 1, childFrame,
-                           parent * PAGE_SIZE + rowIdx);
+            getUnusedOrMaxFrame(unusedFrame, unusedAddressInParent, maxFrame, usedEmptyFrame,
+                                currDepth + 1, childFrame,physicalAddress);
         }
     }
 
-    if (!reached && currFrame != usedNullifiedFrame)
+    if (!hasChildren && currFrame != usedEmptyFrame)
     {
-        PMwrite(cameFromAddress, 0);
+        unusedAddressInParent = cameFromPhysicalAddress;
         unusedFrame = currFrame;
     }
 }
 
 /**
  *
- * @param currFrame
+ * @param formerChosenUnusedFrame
  * @return
  */
-word_t createFrame(uint64_t page, word_t isUsed, uint64_t depth)
+word_t createUnusedOrMaxFrame(word_t formerChosenUnusedFrame)
 {
-    word_t frame = 0;
-    getUnusedFrame(frame, isUsed); // O(n)
+    word_t unusedFrame = 0;
+    uint64_t physicalAddressInParent = 0;
 
-    if (frame)
+    word_t maxFrame = 0;
+
+    getUnusedOrMaxFrame(unusedFrame, physicalAddressInParent, maxFrame,
+                        formerChosenUnusedFrame);
+
+    if (unusedFrame)
     {
-        return frame;
+        PMwrite(physicalAddressInParent, 0); // Remove edge from old parent
+        return unusedFrame;
     }
-    getMaxUsedFrame(frame); // O(n)
 
-    if (frame < NUM_FRAMES - 1)
+    if (maxFrame < NUM_FRAMES - 1)
     {
-        return frame + 1;
+        return maxFrame + 1;
     }
 
-    /** Evict stuff: */
+    return 0; // No unused nor max available ==> Goto findFrameToEvict()
+}
+
+/**
+ *
+ * @param page
+ * @param depthOfFrame
+ * @return
+ */
+word_t evictFrame(uint64_t page, uint64_t depthOfFrame)
+{
     word_t maxCycDist = 0;
-    uint64_t pageToEvict = 0;
     word_t evictedFrame = 0;
+    uint64_t pageToEvict = 0;
     uint64_t mappedFromAddress = 0;
 
-    evict(page, maxCycDist, pageToEvict, evictedFrame, mappedFromAddress);
+    findFrameToEvict(page, maxCycDist, pageToEvict, evictedFrame, mappedFromAddress);
 
     PMevict(evictedFrame, pageToEvict);
-    if (depth < static_cast<uint64_t>(TABLES_DEPTH) - 1) {
+    PMwrite(mappedFromAddress, 0); // Remove edge from old parent
+
+    if (depthOfFrame < static_cast<uint64_t>(TABLES_DEPTH) - 1) // If it's a mid-level page, clear it!
+    {
         clearTable(evictedFrame); // Mid-level page-fault
     }
-    PMwrite(mappedFromAddress, 0);
 
     return evictedFrame;
+}
+
+/**
+ *
+ */
+word_t createFrame(uint64_t page, word_t formerChosenUnusedFrame, uint64_t depthOfFrame)
+{
+    auto maxOrUnusedFrame = createUnusedOrMaxFrame(formerChosenUnusedFrame);
+
+    return maxOrUnusedFrame ? maxOrUnusedFrame : evictFrame(page, depthOfFrame);
 }
 
 /** This function finds a frame associated with the given virtual address.
@@ -201,7 +230,7 @@ uint64_t findFrame(uint64_t pageAddress)
     word_t nextFrame;
     auto currOffset = 0ULL;
 
-    for (auto currDepth = 0; currDepth < TABLES_DEPTH; ++currDepth)
+    for (uint64_t currDepth = 0; currDepth < TABLES_DEPTH; ++currDepth)
     {
         currOffset = fetchDepthOffset(pageAddress, currDepth);
         auto physicalAddress = currFrame * PAGE_SIZE + currOffset;
@@ -253,6 +282,7 @@ int VMread(uint64_t virtualAddress, word_t* value)
     uint64_t offset = fetchOffset(virtualAddress);
 
     auto physicalAddress = frameIndex * PAGE_SIZE + offset;
+
     PMread(physicalAddress, value);
 
     return 1;
@@ -267,7 +297,7 @@ int VMread(uint64_t virtualAddress, word_t* value)
  */
 int VMwrite(uint64_t virtualAddress, word_t value)
 {
-    if (virtualAddress >= VIRTUAL_MEMORY_SIZE) // TODO - what if virtualAddress = 0
+    if (virtualAddress >= VIRTUAL_MEMORY_SIZE)
     {
         return 0;
     }
@@ -276,6 +306,7 @@ int VMwrite(uint64_t virtualAddress, word_t value)
     uint64_t offset = fetchOffset(virtualAddress);
 
     auto physicalAddress = frameIndex * PAGE_SIZE + offset;
+
     PMwrite(physicalAddress, value);
 
     return 1;
