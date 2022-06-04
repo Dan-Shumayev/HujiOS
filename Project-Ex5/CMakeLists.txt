@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.13)
 project(ex5 VERSION 1.0 LANGUAGES C CXX)
 
 
-add_compile_options(-Wall -Wextra -g -fsanitize=address)
+add_compile_options(-Wall -Wextra -Werror -std=c++11 -g -fsanitize=address)
 add_link_options(-fsanitize=address)
 
 add_executable(sockets sockets.cpp)

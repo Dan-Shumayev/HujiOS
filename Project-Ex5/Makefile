@@ -1,6 +1,6 @@
 CXX = g++
 
-CXXFLAGS  = -g -Wall -Wextra
+CXXFLAGS  = -g -Wall -Wextra -Werror -std=c++11
 
 TARGETS = sockets container
 
