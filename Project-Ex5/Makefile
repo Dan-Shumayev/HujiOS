@@ -2,7 +2,7 @@ CXX = g++
 
 CXXFLAGS  = -g -Wall -Wextra
 
-TARGETS = sockets.a container.a
+TARGETS = sockets container
 
 TAR=tar
 TARSRCS = $(CONTAINER_SRCS) $(SOCKETS_SRCS) README Makefile
@@ -14,11 +14,11 @@ SOCKETS_SRCS = sockets.cpp
 
 all: $(TARGETS)
 
-container.a: $(CONTAINER_SRCS)
-	$(CXX) $(CXXFLAGS) -o container.a container.cpp
+container: $(CONTAINER_SRCS)
+	$(CXX) $(CXXFLAGS) -o container container.cpp
 
-sockets.a: $(SOCKETS_SRCS)
-	$(CXX) $(CXXFLAGS) -o sockets.a sockets.cpp
+sockets: $(SOCKETS_SRCS)
+	$(CXX) $(CXXFLAGS) -o sockets sockets.cpp
 
 tar: $(TARGETS)
 	$(TAR) $(TARFLAGS) $(TARNAME) $(TARSRCS)

@@ -10,4 +10,4 @@ add_link_options(-fsanitize=address)
 
 add_executable(sockets sockets.cpp)
 add_executable(container container.cpp)
-set_property(TARGET sockets container PROPERTY CXX_STANDARD 14)
+set_property(TARGET sockets container PROPERTY CXX_STANDARD 11)
