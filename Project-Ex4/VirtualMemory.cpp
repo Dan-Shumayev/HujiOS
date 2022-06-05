@@ -14,6 +14,8 @@
  */
 void clearTable(uint64_t frameIndex)
 {
+    // a constant should be defined more clearly, e.g
+    // const uint64_t ROOT_FRAME_PHYS_ADDR = 0;
     auto rootFrame = 0;
 
     for (auto i = 0; i < PAGE_SIZE; ++i)
@@ -29,6 +31,10 @@ void clearTable(uint64_t frameIndex)
  */
 uint64_t fetchOffset(uint64_t virtualAddress)
 {
+    // I think it's better to have here `uint64_t` instead of auto
+    // Generally useful when doing casting and bitwise operations on numbers,
+    // to make sure that 'auto' doesn't use a less precise numeric type.
+    // (Though I don't believe it's a problem here)
     auto maskedBits = (1ULL << OFFSET_WIDTH) - 1;
 
     return virtualAddress & maskedBits;
@@ -49,14 +55,19 @@ uint64_t fetchPageAddress(uint64_t virtualAddress) { return virtualAddress >> OF
  */
 uint64_t fetchDepthOffset(uint64_t &address, uint64_t &depth)
 {
+    // See my previous comment about using uint64_t instead of auto
+    // The name 'shiftRightByOffsetWidth' is bad, obvious I see in  a line below
+    // that you use this variable for shifting right..
+    // Think of a more succcessful name that explains what this offset does,
     auto shiftRightByOffsetWidth = (TABLES_DEPTH - depth - 1) * OFFSET_WIDTH;
+    // Also a bad name
     auto fetchedPageByShift = address >> shiftRightByOffsetWidth;
 
     return fetchOffset(fetchedPageByShift);
 }
 
 /**
- *
+ * Function signature is too big
  * @param page
  * @param maxCycDist
  * @param addressInParent
@@ -70,6 +81,7 @@ void computeAndUpdateMaxCycDist(uint64_t page, int &maxCycDist, uint64_t address
                                 uint64_t currLeafPage, uint64_t &evictedAddressInParent, word_t &evictedFrame,
                                 uint64_t &pageToEvict)
 {
+    // use std::abs for consistency
     auto absDelta = abs(static_cast<int>(page - currLeafPage));
     auto cycDist = std::min(static_cast<int>NUM_PAGES - absDelta, absDelta);
 
@@ -83,6 +95,7 @@ void computeAndUpdateMaxCycDist(uint64_t page, int &maxCycDist, uint64_t address
     }
 }
 
+/** Function signature is too big */
 void findFrameToEvict(uint64_t page, int &maxCycDist, uint64_t &pageToEvict, word_t &evictedFrame,
                       uint64_t &evictedAddressInParent, uint64_t addressInParent = 0, uint64_t depth = 0,
                       word_t currFrame = 0, uint64_t currLeafPage = 0)
@@ -110,8 +123,13 @@ void findFrameToEvict(uint64_t page, int &maxCycDist, uint64_t &pageToEvict, wor
     }
 }
 
+
+
 /**
- *
+ * - Function signature is too big
+   - Function is called "getXXX" yet it doesn't return anything
+     
+ 
  * @param unusedFrame
  * @param unusedAddressInParent
  * @param maxFrame
