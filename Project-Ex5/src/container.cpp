@@ -38,7 +38,7 @@ struct ChildArgs {
     exit(1);
 }
 
-void fetchChildArgs(int argc, char *const *argv, ChildArgs &child_args, int &max_n_processes) {
+int fetchChildArgs(int argc, char *const *argv, ChildArgs &child_args) {
     child_args = {
             .new_hostname = argv[1],
             .new_filesystem_path = argv[2],
@@ -51,7 +51,7 @@ void fetchChildArgs(int argc, char *const *argv, ChildArgs &child_args, int &max
     }
     // TODO validate args - how?
 
-    max_n_processes = std::stoi(argv[3]);
+    return std::stoi(argv[3]);
 }
 
 std::vector<const char *> toCArgs(ChildArgs &args, const char *c_program_path) {
@@ -112,9 +112,8 @@ void configureCgroups(int child_pid, int num_processes) {
 
 int main(int argc, char **argv) {
     ChildArgs child_args;
-    int max_n_processes;
 
-    fetchChildArgs(argc, argv, child_args, max_n_processes);
+    int max_n_processes = fetchChildArgs(argc, argv, child_args);
 
     // TODO: Consider migrating barrier stuff to a RAII class
     pthread_barrierattr_t attr;
