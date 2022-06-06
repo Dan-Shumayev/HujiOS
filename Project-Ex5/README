@@ -1,1 +1,24 @@
-todo
+dans,
+Dan Shumayev (207050691),
+
+TODO - Answer theoretical questions, update partner's details, and add impl. description
+
+Theoretical part - Q&A:
+
+1. Q: Describe one general use of Linux pid namespaces.
+   A:
+
+2. Q: How can Linux mount namespaces be used to help isolate a process?
+   A:
+
+3. Q: Describe one general use of Linux cgroups.
+   A:
+
+4. Q: Explain the use of the clone command, and how it is different from the fork command
+   A:
+
+5. Q: What does the chroot command do?
+   A:
+
+6. Q: What is the purpose of procfs? Give an example of its use.
+   A:
