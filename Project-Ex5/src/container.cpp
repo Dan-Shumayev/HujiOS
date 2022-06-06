@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
     wait(nullptr);
 
     std::string proc_path = child_args.new_filesystem_path + "/proc";
-    int umount_res = umount(proc_path.c_str());
+    int umount_res = umount2(proc_path.c_str(), MNT_DETACH);
     if (umount_res != 0) {
         perror("system error: umount() proc - ");
         exit(1);
