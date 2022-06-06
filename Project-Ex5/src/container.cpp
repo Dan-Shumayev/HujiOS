@@ -26,15 +26,10 @@ struct ChildArgs {
 };
 
 
-[[ noreturn ]] void panic(const char* failedFunc) {
-    char errMsg[256];
+[[ noreturn ]] void panic(const std::string &failedFunc) {
+    auto errMsg = "system error: " + failedFunc + " - ";
 
-    auto str1 = "system error: ";
-    auto str2 = " - ";
-
-    snprintf(errMsg, sizeof(errMsg), "%s%s%s", str1, failedFunc, str2);
-
-    perror(errMsg);
+    perror(errMsg.c_str());
     exit(1);
 }
 
@@ -49,7 +44,6 @@ int fetchChildArgs(int argc, char *const *argv, ChildArgs &child_args) {
     for (auto program_args_idx = 5; program_args_idx < argc; ++program_args_idx) {
         child_args.program_args.emplace_back(argv[program_args_idx]);
     }
-    // TODO validate args - how?
 
     return std::stoi(argv[3]);
 }
@@ -105,7 +99,7 @@ int child(void* arg) {
 void configureCgroups(int child_pid, int num_processes) {
     (void)child_pid;
     (void)num_processes;
-    // TODO
+    // TODO - implement this one, in order to limit the container's num of processes
 }
 
 // TODO - Yikes! Massive refactoring is required below; Consider introducing useful classes/structs.
