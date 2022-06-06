@@ -9,6 +9,7 @@
 #include <signal.h>
 #include <array>
 #include <vector>
+#include <pthread.h>
 
 const size_t STACK_SIZE = 8192;
 
@@ -21,6 +22,18 @@ struct ChildArgs {
     std::vector<std::string> program_args;
 };
 
+
+void configureCgroups(int child_pid, int num_processes) {
+    (void)child_pid;
+    (void)num_processes;
+    std::cout << "configure cgroups" << std::endl;
+}
+
+// A barrier that ensures the container doesn't execve before the parent(container builder)
+// has configured cgroups, to avoid race conditions in which the container starts too many
+// processes.
+pthread_barrier_t cgroup_barrier;  
+
 int main(int argc, char **argv) {
     ChildArgs child_args = {
         .new_hostname = argv[1],
@@ -32,14 +45,18 @@ int main(int argc, char **argv) {
     std::string num_processes_s = argv[3];
     int num_processes = std::stoi(num_processes_s);
 
-    // TODO cgroups
-    (void)num_processes;
-
     for (int i=5; i < argc; ++i)
     {
         child_args.program_args.emplace_back(argv[i]);
     }
     // TODO validate args
+
+    // TODO validate pthread return codes
+    pthread_barrierattr_t attr; 
+    int res1= pthread_barrierattr_init(&attr);
+    int res2= pthread_barrierattr_setpshared(&attr, PTHREAD_PROCESS_SHARED); 
+    int res3= pthread_barrier_init(&cgroup_barrier, &attr, 1);
+    printf("res1: %d\tres2: %d\tres3: %d\n", res1, res2, res3);
 
     std::array<uint8_t, STACK_SIZE> stack;
     int child_pid = clone(child, stack.data() + stack.size(), 
@@ -52,6 +69,14 @@ int main(int argc, char **argv) {
         exit(1);
     }
     
+    configureCgroups(child_pid, num_processes);
+    int waitRes = pthread_barrier_wait(&cgroup_barrier);
+    printf("parent waited finished, res: %d\n", waitRes);
+    if (waitRes != 0) {
+        perror("parent waitRes: ");
+    }
+    pthread_barrier_destroy(&cgroup_barrier);
+
     wait(nullptr);
 
     std::string proc_path = child_args.new_filesystem_path + "/proc";
@@ -87,10 +112,16 @@ int child(void* arg) {
 
     int mount_res = mount("proc", "/proc", "proc", 0, 0 );
     if (mount_res != 0) {
-        perror("system error: mount() - ");
+        perror("system error: mount() proc - ");
         exit(1);
     }
 
+    printf("container waiting barrier\n");
+    int childWait = pthread_barrier_wait(&cgroup_barrier);
+    printf("container waited finished, res=%d\n", childWait);
+    if (childWait != 0) {
+        perror("child waitRes: ");
+    }
 
     const char* c_program_path = args.program_path.c_str();
     std::vector<const char*> c_program_args = { c_program_path };
