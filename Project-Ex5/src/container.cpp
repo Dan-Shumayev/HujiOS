@@ -8,8 +8,14 @@
 #include <string.h>
 #include <signal.h>
 #include <array>
+#include <fstream>
 #include <vector>
 #include <pthread.h>
+#include <sys/stat.h>
+#include <fcntl.h>           /* Definition of AT_* constants */
+#include <sys/stat.h>
+
+
 
 const size_t STACK_SIZE = 8192;
 
@@ -104,10 +110,26 @@ int child(void* arg) {
     return 1;
 }
 
+const std::string CGROUP_DIR = "/sys/fs/cgroup/shumayev-cgroup";
+
 void configureCgroups(int child_pid, int num_processes) {
-    (void)child_pid;
-    (void)num_processes;
     // TODO - implement this one, in order to limit the container's num of processes
+    if (mkdir(CGROUP_DIR.c_str(), 755) && errno != EEXIST) {
+        panic("mkdir() couldn't create cgroup");
+    }
+    std::ofstream  procs_file { CGROUP_DIR + "/cgroup.procs"};
+    std::ofstream  pids_max { CGROUP_DIR + "/pids.max"};
+    std::ofstream  notify_file { CGROUP_DIR + "/notify_on_release" };
+
+    procs_file << child_pid << std::endl;
+    pids_max << num_processes << std::endl;
+    notify_file << 1 << std::endl;
+}
+
+void cleanupCgroups() {
+    if (rmdir(CGROUP_DIR.c_str())) {
+        panic("Couldn't remove cgroup directory");
+    }
 }
 
 // TODO - Yikes! Massive refactoring is required below; Consider introducing useful classes/structs.
@@ -173,6 +195,8 @@ int main(int argc, char **argv) {
     if (umount2(proc_path.c_str(), MNT_DETACH)) {
         panic("umount2() proc");
     }
+
+    cleanupCgroups();
 
     return 0;
 }
