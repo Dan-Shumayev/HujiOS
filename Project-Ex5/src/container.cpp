@@ -2,6 +2,7 @@
 #include <linux/sched.h>    /* Definition of struct clone_args */
 #include <sched.h>          /* Definition of CLONE_* constants */
 #include <sys/mount.h>
+#include <sys/mman.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <string.h>
@@ -12,17 +13,17 @@
 
 const size_t STACK_SIZE = 8192;
 
-/** A barrier that ensures the container doesn't execve before the parent (container builder)
-  * has configured Cgroups, to avoid race conditions in which the container starts
-  * too many processes before the parent had restricted him. */
-// TODO - consider using mmap() instead of breaking things up with CLONE_VM
-pthread_barrier_t cgroup_barrier;
 
 struct ChildArgs {
     std::string new_hostname;
     std::string new_filesystem_path;
     std::string program_path;
     std::vector<std::string> program_args;
+    /** A barrier that ensures the container doesn't execve before the parent (container builder)
+     * has configured Cgroups, to avoid race conditions in which the container starts
+     * too many processes before the parent had restricted him. */
+    // TODO - consider using mmap() instead of breaking things up with CLONE_VM
+    pthread_barrier_t *cgroup_barrier;
 };
 
 
@@ -40,6 +41,9 @@ int fetchChildArgs(int argc, char *const *argv, ChildArgs &child_args) {
             .program_path = argv[4],
             .program_args = {}
     };
+
+    child_args.cgroup_barrier = static_cast<pthread_barrier_t*>(mmap(nullptr, sizeof(pthread_barrier_t), PROT_READ | PROT_WRITE,
+     MAP_ANONYMOUS | MAP_SHARED, -1, 0));
 
     for (auto program_args_idx = 5; program_args_idx < argc; ++program_args_idx) {
         child_args.program_args.emplace_back(argv[program_args_idx]);
@@ -83,8 +87,12 @@ int child(void* arg) {
     setContainerNS(args);
 
     // Wait on barrier till container builder (essentially the parent) configures suitable cgroups
-    if (pthread_barrier_wait(&cgroup_barrier) == EINVAL) {
+    if (pthread_barrier_wait(args.cgroup_barrier) == EINVAL) {
         perror("child cgroup_barrier: ");
+    }
+
+    if (munmap(args.cgroup_barrier, sizeof(pthread_barrier_t))) {
+        panic("munmap () pthread_barrier_t");
     }
 
     // execve stuff:
@@ -121,14 +129,14 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    if (pthread_barrier_init(&cgroup_barrier, &attr, 2)) {
+    if (pthread_barrier_init(child_args.cgroup_barrier, &attr, 2)) {
         perror("pthread_barrier_init: ");
         exit(1);
     }
 
     std::array<uint8_t, STACK_SIZE> stack{};
     int child_pid = clone(child, stack.data() + stack.size(),
-                          CLONE_NEWUTS | CLONE_NEWPID | CLONE_NEWNS | SIGCHLD | CLONE_VM,
+                          CLONE_NEWUTS | CLONE_NEWPID | CLONE_NEWNS | SIGCHLD,
                           &child_args
     );
 
@@ -140,12 +148,12 @@ int main(int argc, char **argv) {
     configureCgroups(child_pid, max_n_processes);
 
     // Goto barrier, indicating cgroups are successfully configured
-    if (pthread_barrier_wait(&cgroup_barrier) == EINVAL) {
+    if (pthread_barrier_wait(child_args.cgroup_barrier) == EINVAL) {
         perror("parent cgroup_barrier: ");
         exit(1);
     }
 
-    if (pthread_barrier_destroy(&cgroup_barrier)) {
+    if (pthread_barrier_destroy(child_args.cgroup_barrier)) {
         perror("parent pthread_barrier_destroy: ");
         exit(1);
     }
@@ -153,6 +161,10 @@ int main(int argc, char **argv) {
     if (pthread_barrierattr_destroy(&attr)) {
         perror("pthread_barrierattr_destroy: ");
         exit(1);
+    }
+
+    if (munmap(child_args.cgroup_barrier, sizeof(pthread_barrier_t))) {
+        panic("munmap () pthread_barrier_t");
     }
 
     wait(nullptr); // Wait until child terminates
