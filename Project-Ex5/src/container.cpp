@@ -12,13 +12,11 @@
 #include <vector>
 #include <pthread.h>
 #include <sys/stat.h>
-#include <fcntl.h>           /* Definition of AT_* constants */
-#include <sys/stat.h>
-
 
 
 const size_t STACK_SIZE = 8192;
 
+const std::string CGROUP_DIR = "/sys/fs/cgroup/shumayev-cgroup";
 
 struct ChildArgs {
     std::string new_hostname;
@@ -41,20 +39,20 @@ struct ChildArgs {
 
 int fetchChildArgs(int argc, char *const *argv, ChildArgs &child_args) {
     child_args = {
-        .new_hostname = argv[1],
-        .new_filesystem_path = argv[2],
-        .program_path = argv[4],
-        .program_args = {},
-        .cgroup_barrier = static_cast<pthread_barrier_t*>(mmap(nullptr, sizeof(pthread_barrier_t),
-                                                               PROT_READ | PROT_WRITE,
-                                                               MAP_ANONYMOUS | MAP_SHARED, -1, 0))
+        argv[1],
+        argv[2],
+        argv[4],
+        {},
+        static_cast<pthread_barrier_t*>(mmap(nullptr, sizeof(pthread_barrier_t),
+                                                           PROT_READ | PROT_WRITE,
+                                                           MAP_ANONYMOUS | MAP_SHARED, -1, 0))
     };
 
     for (auto program_args_idx = 5; program_args_idx < argc; ++program_args_idx) {
         child_args.program_args.emplace_back(argv[program_args_idx]);
     }
 
-    return std::stoi(argv[3]);
+    return std::stoi(argv[3]); // Assuming the fourth argument is an integer
 }
 
 std::vector<const char *> toCArgs(ChildArgs &args, const char *c_program_path) {
@@ -63,7 +61,6 @@ std::vector<const char *> toCArgs(ChildArgs &args, const char *c_program_path) {
     for (const std::string& prog_arg: args.program_args) {
         c_program_args.push_back(prog_arg.c_str());
     }
-
     c_program_args.push_back(nullptr); // Null-termination indicator
 
     return c_program_args;
@@ -82,7 +79,7 @@ void setContainerNS(const ChildArgs &args) {
         panic("chdir()");
     }
 
-    if (mount("proc", "/proc", "proc", 0, nullptr )) {
+    if (mount("proc", "/proc", "proc", 0, nullptr)) {
         panic("mount()");
     }
 }
@@ -91,34 +88,33 @@ int child(void* arg) {
     ChildArgs &args = *static_cast<ChildArgs*>(arg);
     setContainerNS(args);
 
-    // Wait on barrier till container builder (essentially the parent) configures suitable cgroups
+    // Wait on barrier till container builder (essentially the parent) configures
+    // suitable Cgroups
     if (pthread_barrier_wait(args.cgroup_barrier) == EINVAL) {
-        perror("child cgroup_barrier: ");
+        perror("child cgroup_barrier() ");
     }
-
     if (munmap(args.cgroup_barrier, sizeof(pthread_barrier_t))) {
-        panic("munmap () pthread_barrier_t");
+        panic("munmap() pthread_barrier_t ");
     }
 
     // execve stuff:
     const char* c_program_path = args.program_path.c_str();
     std::vector<const char *> c_program_args = toCArgs(args, c_program_path);
     execve(c_program_path, const_cast<char *const*>(c_program_args.data()), nullptr);
+
+    // Reaching this point after executing execve indicates on a failure
     perror("system error: execve() - ");
-
-    return 1;
+    return EXIT_FAILURE;
 }
-
-const std::string CGROUP_DIR = "/sys/fs/cgroup/shumayev-cgroup";
 
 void configureCgroups(int child_pid, int num_processes) {
     if (mkdir(CGROUP_DIR.c_str(), 755) && errno != EEXIST) {
         panic("mkdir() couldn't create cgroup");
     }
 
-    std::ofstream  procs_file { CGROUP_DIR + "/cgroup.procs"};
-    std::ofstream  pids_max { CGROUP_DIR + "/pids.max"};
-    std::ofstream  notify_file { CGROUP_DIR + "/notify_on_release" };
+    std::ofstream procs_file { CGROUP_DIR + "/cgroup.procs"};
+    std::ofstream pids_max { CGROUP_DIR + "/pids.max"};
+    std::ofstream notify_file { CGROUP_DIR + "/notify_on_release" };
 
     procs_file << child_pid << std::endl;
     pids_max << num_processes << std::endl;
@@ -133,27 +129,43 @@ void cleanupCgroups() {
 
 // TODO - Yikes! Massive refactoring is required below; Consider introducing useful classes/structs.
 
+void barrierInit(ChildArgs &child_args, pthread_barrierattr_t &attr) {
+    auto n_procs_in_barrier = 2; // Parent process and the container (its child)
+
+    if (pthread_barrierattr_init(&attr)) {
+        panic("pthread_barrierattr_init()");
+    }
+
+    if (pthread_barrierattr_setpshared(&attr, PTHREAD_PROCESS_SHARED)) {
+        panic("pthread_barrierattr_setpshared()");
+    }
+
+    if (pthread_barrier_init(child_args.cgroup_barrier, &attr, n_procs_in_barrier)) {
+        panic("pthread_barrier_init()");
+    }
+}
+
+void barrierDestroy(ChildArgs &child_args, pthread_barrierattr_t &attr) {
+    if (pthread_barrier_destroy(child_args.cgroup_barrier)) {
+        panic("parent pthread_barrier_destroy: ");
+    }
+
+    if (pthread_barrierattr_destroy(&attr)) {
+        panic("pthread_barrierattr_destroy: ");
+    }
+
+    if (munmap(child_args.cgroup_barrier, sizeof(pthread_barrier_t))) {
+        panic("munmap () pthread_barrier_t");
+    }
+}
+
 int main(int argc, char **argv) {
     ChildArgs child_args;
-
     int max_n_processes = fetchChildArgs(argc, argv, child_args);
 
     // TODO: Consider migrating barrier stuff to a RAII class
     pthread_barrierattr_t attr;
-    if (pthread_barrierattr_init(&attr)) {
-        perror("pthread_barrierattr_init: ");
-        exit(1);
-    }
-
-    if (pthread_barrierattr_setpshared(&attr, PTHREAD_PROCESS_SHARED)) {
-        perror("pthread_barrierattr_setpshared: ");
-        exit(1);
-    }
-
-    if (pthread_barrier_init(child_args.cgroup_barrier, &attr, 2)) {
-        perror("pthread_barrier_init: ");
-        exit(1);
-    }
+    barrierInit(child_args, attr);
 
     std::array<uint8_t, STACK_SIZE> stack{};
     int child_pid = clone(child, stack.data() + stack.size(),
@@ -168,25 +180,11 @@ int main(int argc, char **argv) {
     // Let the child spawn at most #max_n_processes processes
     configureCgroups(child_pid, max_n_processes);
 
-    // Goto barrier, indicating cgroups are successfully configured
+    // Goto barrier, indicating Cgroups are successfully configured
     if (pthread_barrier_wait(child_args.cgroup_barrier) == EINVAL) {
-        perror("parent cgroup_barrier: ");
-        exit(1);
+        panic("parent cgroup_barrier: ");
     }
-
-    if (pthread_barrier_destroy(child_args.cgroup_barrier)) {
-        perror("parent pthread_barrier_destroy: ");
-        exit(1);
-    }
-
-    if (pthread_barrierattr_destroy(&attr)) {
-        perror("pthread_barrierattr_destroy: ");
-        exit(1);
-    }
-
-    if (munmap(child_args.cgroup_barrier, sizeof(pthread_barrier_t))) {
-        panic("munmap () pthread_barrier_t");
-    }
+    barrierDestroy(child_args, attr);
 
     wait(nullptr); // Wait until child terminates
 
