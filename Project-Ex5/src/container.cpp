@@ -28,7 +28,6 @@ struct ChildArgs {
     /** A barrier that ensures the container doesn't execve before the parent (container builder)
      * has configured Cgroups, to avoid race conditions in which the container starts
      * too many processes before the parent had restricted him. */
-    // TODO - consider using mmap() instead of breaking things up with CLONE_VM
     pthread_barrier_t *cgroup_barrier;
 };
 
@@ -42,14 +41,14 @@ struct ChildArgs {
 
 int fetchChildArgs(int argc, char *const *argv, ChildArgs &child_args) {
     child_args = {
-            .new_hostname = argv[1],
-            .new_filesystem_path = argv[2],
-            .program_path = argv[4],
-            .program_args = {}
+        .new_hostname = argv[1],
+        .new_filesystem_path = argv[2],
+        .program_path = argv[4],
+        .program_args = {},
+        .cgroup_barrier = static_cast<pthread_barrier_t*>(mmap(nullptr, sizeof(pthread_barrier_t),
+                                                               PROT_READ | PROT_WRITE,
+                                                               MAP_ANONYMOUS | MAP_SHARED, -1, 0))
     };
-
-    child_args.cgroup_barrier = static_cast<pthread_barrier_t*>(mmap(nullptr, sizeof(pthread_barrier_t), PROT_READ | PROT_WRITE,
-     MAP_ANONYMOUS | MAP_SHARED, -1, 0));
 
     for (auto program_args_idx = 5; program_args_idx < argc; ++program_args_idx) {
         child_args.program_args.emplace_back(argv[program_args_idx]);
@@ -113,10 +112,10 @@ int child(void* arg) {
 const std::string CGROUP_DIR = "/sys/fs/cgroup/shumayev-cgroup";
 
 void configureCgroups(int child_pid, int num_processes) {
-    // TODO - implement this one, in order to limit the container's num of processes
     if (mkdir(CGROUP_DIR.c_str(), 755) && errno != EEXIST) {
         panic("mkdir() couldn't create cgroup");
     }
+
     std::ofstream  procs_file { CGROUP_DIR + "/cgroup.procs"};
     std::ofstream  pids_max { CGROUP_DIR + "/pids.max"};
     std::ofstream  notify_file { CGROUP_DIR + "/notify_on_release" };
