@@ -57,7 +57,7 @@ public:
 
         if (sockFd == -1)
         {
-            panic("Couldn't create socket");
+            panic("socket() - ");
         }
     }
 
@@ -119,6 +119,7 @@ public:
     {
         sockaddr addr = {};
         socklen_t addrLen = sizeof(addr);
+
         if (getpeername(sockFd, &addr, &addrLen))
         {
             panic("getpeername() - ");

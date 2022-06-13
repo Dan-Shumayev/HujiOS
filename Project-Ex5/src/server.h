@@ -11,30 +11,36 @@
 #include <utility>
 
 
-// TODO: inspect - nfds update; STDIN_FILENO; handleClient(s)()
+// TODO: handleClient()
 
 /** Server state */
 class Server
 {
-    Socket servingSocket;
+    Socket serverSocket;
 
+    /** Total number of file-descriptors to be watched */
     int nfds;
-    fd_set readSet;
+    /** Set of all file descriptors communicating with the server */
+    fd_set readfsSet;
+
     std::list<std::unique_ptr<Socket>> clientSockets;
 
-    /** Updates nfds and readSet */
+    /** Updates nfds and readfsSet since as per the `select()` docs:
+     *  After select() has returned, readfds will be cleared of all file descriptors except for
+     *  those that are ready for reading.*/
     void updateSelectParameters()
     {
-        nfds = std::max(servingSocket.getFd(), STDIN_FILENO) + 1;
+        nfds = std::max(serverSocket.getFd(), STDIN_FILENO) + 1;
 
-        FD_ZERO(&readSet);
-        FD_SET(servingSocket.getFd(), &readSet);
-        FD_SET(STDIN_FILENO, &readSet);
+        FD_ZERO(&readfsSet); // Initialize file-descriptor set
+        FD_SET(serverSocket.getFd(), &readfsSet); // Follow new clients arriving at the server
+        FD_SET(STDIN_FILENO, &readfsSet); // Watch standard input gotten from user
 
+        // Add existing clients to our FD-set to be watched
         for (const auto& client: clientSockets)
         {
             nfds = std::max(nfds, client->getFd() + 1);
-            FD_SET(client->getFd(), &readSet);
+            FD_SET(client->getFd(), &readfsSet);
         }
     }
 
@@ -44,12 +50,12 @@ public:
      * @param port Listening socket port
      */
     explicit Server(int port)
-        : servingSocket(),
-          nfds(std::max(STDIN_FILENO, servingSocket.getFd()) + 1),
-          readSet(),
+        : serverSocket(),
+          nfds(std::max(STDIN_FILENO, serverSocket.getFd()) + 1),
+          readfsSet(),
           clientSockets()
     {
-        servingSocket.bindAndListen(port);
+        serverSocket.bindAndListen(port);
     }
 
     /** Server loops, accepts client connections until receiving "quit" */
@@ -61,24 +67,26 @@ public:
         {
             printf(WAIT_FOR_CLIENT_STR);
 
-            updateSelectParameters();
-            if (select(nfds, &readSet, nullptr,
-                       nullptr, nullptr) == -1)
+            updateSelectParameters(); // Re-initialize readfsSet
+
+            if (select(nfds, &readfsSet, nullptr,
+                       nullptr, nullptr) == -1) // Block server till a new request arrives in
             {
                 panic("select() - ");
             }
 
-            if (FD_ISSET(servingSocket.getFd(), &readSet))
+            if (FD_ISSET(serverSocket.getFd(), &readfsSet)) // New client communication request
             {
                 acceptClient();
             }
-            if (FD_ISSET(STDIN_FILENO, &readSet))
+
+            if (FD_ISSET(STDIN_FILENO, &readfsSet)) // User input
             {
                 std::string input;
                 std::getline(std::cin, input);
                 running = input != "quit";
             }
-            else
+            else // Data request from a client
             {
                 handleClients();
             }
@@ -88,7 +96,7 @@ public:
     /** Accepts a client (without handling it) */
     void acceptClient()
     {
-        std::unique_ptr<Socket> clientSocket = servingSocket.accept();
+        std::unique_ptr<Socket> clientSocket = serverSocket.accept();
 
         nfds = std::max(nfds, clientSocket->getFd() + 1);
         clientSockets.push_back(std::move(clientSocket));
@@ -103,7 +111,7 @@ public:
         {
             auto fd = (*it)->getFd();
 
-            if (FD_ISSET(fd, &readSet))
+            if (FD_ISSET(fd, &readfsSet))
             {
                 handleClient(**it);
                 it = clientSockets.erase(it);
@@ -121,47 +129,14 @@ public:
         printf(CLIENT_IP_STR, clientSocket.getPeerIpAddress().c_str());
 
         auto msg = Command::fromSocket(clientSocket);
-        if (!isRequestMessage(msg.messageType))
-        {
-            panic("Expected request from client, got something else");
-        }
-        std::string fullPath = toFullPath(msg.remoteName);
-        printf(CLIENT_COMMAND_STR, msg.messageType == MessageType::Upload ? 'u': 'd');
-        printf(FILENAME_STR, msg.remoteName.c_str());
-        printf(FILE_PATH_STR, fullPath.c_str());
-        if (!isFilenameValid(msg.remoteName))
-        {
-            panic("Filename passed by client is not valid");
-            auto res = Message(MessageType::FilenameError);
-            res.toSocket(clientSocket);
-            return;
-        }
-        try
-        {
-            if (msg.messageType == MessageType::Upload)
-            {
-                saveFile(msg.payload, fullPath);
-                auto res = Message(MessageType::UploadSuccess);
-                res.toSocket(clientSocket);
-            }
-            else if (msg.messageType == MessageType::Download)
-            {
-                auto bytes = loadFile(fullPath);
-                auto res = Message(MessageType::DownloadSuccess, bytes);
-                res.toSocket(clientSocket);
-            }
-            else
-            {
-                panic("Unsupported/invalid request message");
-            }
-            printf(SUCCESS_STR);
-        }
-        catch (const std::ios::failure &)
-        {
-            panic("IO exception while handling client request");
-            auto res = Message(MessageType::FileError);
-            res.toSocket(clientSocket);
-        }
+//        if (msg == Args)
+//        {
+//            auto bytes = loadFile(fullPath);
+//            auto res = Message(MessageType::DownloadSuccess, bytes);
+//            res.toSocket(clientSocket);
+//        }
+
+        printf(SUCCESS_STR);
     }
 };
 
