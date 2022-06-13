@@ -22,13 +22,16 @@ def run_container(
     image_dir: Path,
     num_proc: int,
     program_path: Path,
-    program_args: List[str]
-):
-    args = [str(CONTAINER_EXE), new_hostname, str(
-        image_dir), str(num_proc), str(program_path)] + program_args
+    program_args: List[str],
+    valgrind: bool = False
+) -> subprocess.CompletedProcess:
+    default_args = [str(CONTAINER_EXE), new_hostname, str(image_dir), str(num_proc), str(program_path)] \
+                        + program_args
+
+    args = ["valgrind"] + default_args if valgrind else default_args
 
     return subprocess.run(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                         universal_newlines=True)
+                         universal_newlines=True, timeout=60)
 
 
 def test_hostname():
@@ -51,3 +54,11 @@ def test_max_processes():
 
     assert res.returncode == 0
     assert "No child processes" in res.stderr
+
+def test_valgrind_happy_flow():
+    res = run_container(new_hostname="testHostName", image_dir=IMAGE_DIR,
+                        num_proc=10, program_path=Path("/bin/bash"),
+                        program_args=["-c", "sleep 3"], valgrind=True)
+
+    assert res.returncode == 0
+    assert "0 bytes in 0 blocks" in res.stderr
