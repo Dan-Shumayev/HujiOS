@@ -12,7 +12,7 @@
 #include <vector>
 #include <pthread.h>
 #include <sys/stat.h>
-
+#include "utilities.h"
 
 const size_t STACK_SIZE = 8192;
 
@@ -21,6 +21,7 @@ const std::string CGROUP_DIR = "/sys/fs/cgroup/shumayev-cgroup";
 struct ChildArgs {
     std::string new_hostname;
     std::string new_filesystem_path;
+    int max_n_processes;
     std::string program_path;
     std::vector<std::string> program_args;
     /** A barrier that ensures the container doesn't execve before the parent (container builder)
@@ -30,17 +31,11 @@ struct ChildArgs {
 };
 
 
-[[ noreturn ]] void panic(const std::string &failedFunc) {
-    auto errMsg = "system error: " + failedFunc + " - ";
-
-    perror(errMsg.c_str());
-    exit(1);
-}
-
-int fetchChildArgs(int argc, char *const *argv, ChildArgs &child_args) {
+void fetchChildArgs(int argc, char const *argv[], ChildArgs &child_args) {
     child_args = {
         argv[1],
         argv[2],
+        std::stoi(argv[3]),
         argv[4],
         {},
         static_cast<pthread_barrier_t*>(mmap(nullptr, sizeof(pthread_barrier_t),
@@ -51,8 +46,6 @@ int fetchChildArgs(int argc, char *const *argv, ChildArgs &child_args) {
     for (auto program_args_idx = 5; program_args_idx < argc; ++program_args_idx) {
         child_args.program_args.emplace_back(argv[program_args_idx]);
     }
-
-    return std::stoi(argv[3]); // Assuming the fourth argument is an integer
 }
 
 std::vector<const char *> toCArgs(ChildArgs &args, const char *c_program_path) {
@@ -97,12 +90,13 @@ int child(void* arg) {
         panic("munmap() pthread_barrier_t ");
     }
 
-    // execve stuff:
+    // exec* stuff:
     const char* c_program_path = args.program_path.c_str();
     std::vector<const char *> c_program_args = toCArgs(args, c_program_path);
     execve(c_program_path, const_cast<char *const*>(c_program_args.data()), nullptr);
 
-    // Reaching this point after executing execve indicates on a failure
+    // Reaching this point after executing execve indicates on a failure,
+    // since exec* creates a new execution instance out of the current process.
     perror("system error: execve() - ");
     return EXIT_FAILURE;
 }
@@ -159,9 +153,9 @@ void barrierDestroy(ChildArgs &child_args, pthread_barrierattr_t &attr) {
     }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, const char *argv[]) {
     ChildArgs child_args;
-    int max_n_processes = fetchChildArgs(argc, argv, child_args);
+    fetchChildArgs(argc, argv, child_args);
 
     // TODO: Consider migrating barrier stuff to a RAII class
     pthread_barrierattr_t attr;
@@ -178,7 +172,7 @@ int main(int argc, char **argv) {
     }
 
     // Let the child spawn at most #max_n_processes processes
-    configureCgroups(child_pid, max_n_processes);
+    configureCgroups(child_pid, child_args.max_n_processes);
 
     // Goto barrier, indicating Cgroups are successfully configured
     if (pthread_barrier_wait(child_args.cgroup_barrier) == EINVAL) {
