@@ -1,5 +1,16 @@
-int main(int argc, char **argv) {
-    (void)argc;
-    (void)argv;
+#include "command.h"
+#include <string>
+
+
+int main(int argc, const char *argv[]) {
+    std::string cmdLine;
+
+    for (auto ix = 0; ix < argc; ++ix)
+    {
+        cmdLine += std::string(argv[ix]) + " ";
+    }
+
+    Command cmd(argc, cmdLine);
+
     return 0;
 }

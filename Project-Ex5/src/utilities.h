@@ -5,6 +5,7 @@
 #include <cstring>
 #include <string>
 
+
 [[ noreturn ]] void panic(const std::string &failedFunc) {
     auto errMsg = "system error: " + failedFunc + " - ";
 

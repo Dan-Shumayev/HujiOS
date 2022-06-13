@@ -9,26 +9,24 @@
 #include "socket.h"
 
 
-/** Class responsible for client communication with server */
+/** Class responsible for client communication with server (same machine :: localhost) */
 class Client
 {
-    const std::string& ip;
     int port;
     Socket sock;
 
 public:
     /** Construct a client sending TCP-packets to the given IP:port */
-    Client(const std::string &ip, int port) : ip(ip), port(port), sock() {}
+    Client(int port) : port(port), sock() {}
 
     /** Send a command to be run at server */
     void runInServer(const std::string &command)
     {
-        sock.connect(ip, port);
+        sock.connect(port);
 
         printf(CONNECTED_SUCCESSFULLY_STR);
 
-        Command cmd(command);
-        cmd.toServer(sock);
+        writeBytesToSocket(sock, command.c_str(), command.length());
     }
 };
 

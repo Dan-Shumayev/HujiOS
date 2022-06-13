@@ -24,7 +24,7 @@ class Socket
 {
     int sockFd;
 
-    static constexpr int DEFAULT_BACKLOG = 5;
+    static constexpr int DEFAULT_BACKLOG = 5; // TODO: Why constexpr
 
     static constexpr size_t MAX_HOST_NAME_LENGTH = 255;
 
@@ -63,16 +63,10 @@ public:
 
     /** Creates an active connection on the client to a
      *  server identified by given IPv4 address and port */
-    void connect(const std::string& ip, int port) const
+    void connect(int port) const
     {
-        sockaddr_in addr = {};
-        if (inet_aton(ip.c_str(), &addr.sin_addr) == 0)
-        {
-            panic("inet_aton() - ");
-        }
-        addr.sin_family = AF_INET;
-        addr.sin_port = htons(port);
-        std::fill(addr.sin_zero, addr.sin_zero + sizeof(addr.sin_zero), 0);
+        sockaddr_in addr = {AF_INET, htons(port),
+                            Socket::getHostAddress(), {}};
 
         if (::connect(sockFd, reinterpret_cast<sockaddr*>(&addr), sizeof(sockaddr_in)))
         {
@@ -85,6 +79,7 @@ public:
     {
         sockaddr_in addr = {AF_INET, htons(port),
                             Socket::getHostAddress(), {}};
+
 
         if (bind(sockFd, reinterpret_cast<sockaddr*>(&addr), sizeof(sockaddr_in)))
         {
@@ -115,7 +110,7 @@ public:
     }
 
     /** Returns IP address of peer */
-    std::string getPeerIpAddress() const
+    std::string getPeerIpAddress() const // TODO: see if necessary
     {
         sockaddr addr = {};
         socklen_t addrLen = sizeof(addr);
@@ -226,23 +221,6 @@ void readBytesFromSocket(Socket& sock, char* data, size_t len)
 
 /*  The following are wrappers for reading/writing various C++ types into a socket */
 // TODO: inspect
-
-/** Writes a primitive type to socket */
-template<typename T>
-void writeToSocket(Socket& sock, const T& data)
-{
-    T dataNetwork = toNetwork(data);
-    writeBytesToSocket(sock, reinterpret_cast<const char*>(&dataNetwork), sizeof(T));
-}
-
-/** Writes a vector of bytes to socket */
-template<>
-void writeToSocket(Socket& sock, const std::string& args)
-{
-    writeToSocket(sock, args.size());
-    writeBytesToSocket(sock, args.data(), args.size());
-}
-
 
 /** Reads a primitive type from socket */
 template<typename T>
