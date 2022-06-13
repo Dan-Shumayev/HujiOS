@@ -37,29 +37,6 @@ struct Command {
         isServer ? turnServerOn() : toServer();
     }
 
-    /** Reads a message from a socket */
-//    static Command fromSocket(Socket &sock)
-//    {
-//        auto messageType = static_cast<MessageType>(readFromSocket<uint32_t>(sock));
-//        if (isClientArgs(messageType))
-//        {
-//            auto remoteName = readFromSocket<std::string>(sock);
-//            auto payload = readFromSocket<std::vector<char>>(sock);
-//            return Command(std::move(payload));
-//        }
-//        else if (isServerArgs(messageType))
-//        {
-//            std::vector<char> payload;
-//            if (messageType == MessageType::DownloadSuccess)
-//            {
-//                payload = readFromSocket<std::vector<char>>(sock);
-//            }
-//            return Command(payload);
-//        } else
-//        {
-//            panic("Got invalid message type");
-//        }
-//    }
 
 private:
     /** Sends the command to the server */

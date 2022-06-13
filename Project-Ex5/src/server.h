@@ -10,7 +10,6 @@
 #include <utility>
 
 
-// TODO: handleClient()
 
 /** Server state */
 class Server
@@ -22,7 +21,7 @@ class Server
     /** Set of all file descriptors communicating with the server */
     fd_set readfdSet;
 
-    std::list<std::unique_ptr<Socket>> clientSockets; // TODO: why std::list?
+    std::vector<std::unique_ptr<Socket>> clientSockets;
 
     /** Updates nfds and readfdSet since as per the `select()` docs:
      *  After select() has returned, readfds will be cleared of all file descriptors except for
@@ -127,13 +126,12 @@ public:
     {
         printf(CLIENT_IP_STR, clientSocket.getPeerIpAddress().c_str());
 
-//        auto msg = Command::fromSocket(clientSocket);
-//        if (msg == Args)
-//        {
-//            auto bytes = loadFile(fullPath);
-//            auto res = Message(MessageType::DownloadSuccess, bytes);
-//            res.toSocket(clientSocket);
-//        }
+        const size_t MAX_BUF = 256; // Max command from client of size 256B
+        char cmdToRun[MAX_BUF];
+        readBytesFromSocket(clientSocket, cmdToRun, MAX_BUF); // Get data by read()
+
+        std::cout << "The gotten command to system() is: " << cmdToRun << std::endl;
+        system(cmdToRun); // Run the provided command
 
         printf(SUCCESS_STR);
     }

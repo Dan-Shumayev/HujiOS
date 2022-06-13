@@ -17,7 +17,7 @@ class Client
 
 public:
     /** Construct a client sending TCP-packets to the given IP:port */
-    Client(int port) : port(port), sock() {}
+    explicit Client(int port) : port(port), sock() {}
 
     /** Send a command to be run at server */
     void runInServer(const std::string &command)
@@ -26,7 +26,7 @@ public:
 
         printf(CONNECTED_SUCCESSFULLY_STR);
 
-        writeBytesToSocket(sock, command.c_str(), command.length());
+        writeDataToSocket(sock, command.c_str(), command.length());
     }
 };
 
