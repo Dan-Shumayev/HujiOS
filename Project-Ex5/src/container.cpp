@@ -16,6 +16,7 @@
 
 const size_t STACK_SIZE = 8192;
 
+// TODO: must create pids dir?
 const std::string CGROUP_DIR = "/sys/fs/cgroup/shumayev-cgroup";
 
 struct ChildArgs {
@@ -121,8 +122,6 @@ void cleanupCgroups() {
     }
 }
 
-// TODO - Yikes! Massive refactoring is required below; Consider introducing useful classes/structs.
-
 void barrierInit(ChildArgs &child_args, pthread_barrierattr_t &attr) {
     auto n_procs_in_barrier = 2; // Parent process and the container (its child)
 
@@ -171,7 +170,7 @@ int main(int argc, const char *argv[]) {
         panic("clone()");
     }
 
-    // Let the child spawn at most #max_n_processes processes
+    // Let the child spawn at most #max_n_processes processes TODO: must create inside the container?
     configureCgroups(child_pid, child_args.max_n_processes);
 
     // Goto barrier, indicating Cgroups are successfully configured

@@ -130,7 +130,6 @@ public:
         char cmdToRun[MAX_BUF];
         readBytesFromSocket(clientSocket, cmdToRun, MAX_BUF); // Get data by read()
 
-        std::cout << "The gotten command to system() is: " << cmdToRun << std::endl;
         system(cmdToRun); // Run the provided command
 
         printf(SUCCESS_STR);

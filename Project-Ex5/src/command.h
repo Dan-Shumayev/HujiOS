@@ -13,16 +13,17 @@
 /** Represents command line arguments */
 struct Command {
     const std::string &cmdLine;
-
     int numOfArgs;
-    std::vector<std::string> cmdArgs;
 
     int port;
+    std::string cmdToRun;
 
     /** Creates a server */
-    explicit Command(int argc, const std::string &cmdLine)
-            : cmdLine(cmdLine), numOfArgs(argc), port()
+    explicit Command(const std::string &cmdLine)
+            : cmdLine(cmdLine), numOfArgs(0), port(), cmdToRun()
     {
+        commandToArgs();
+
         bool isServer = isServerArgs();
         bool isClient = isClientArgs();
 
@@ -30,9 +31,6 @@ struct Command {
         {
             std::cerr << "Bad usage" << std::endl;
         }
-
-        commandToArgs();
-        port = std::stoi(cmdArgs[2]);
 
         isServer ? turnServerOn() : toServer();
     }
@@ -43,12 +41,6 @@ private:
     void toServer() const
     {
         Client client(port);
-
-        std::string cmdToRun;
-        for (auto ix = 3; ix < numOfArgs; ++ix)
-        {
-            cmdToRun += cmdArgs[ix] + " ";
-        }
 
         client.runInServer(cmdToRun); // Start receiving connections
     }
@@ -79,7 +71,14 @@ private:
         std::string buf; // Have a buffer string
 
         while (ss >> buf) {
-            cmdArgs.push_back(buf);
+            if (numOfArgs == 2) {
+                port = std::stoi(buf); // Assume the third argument is a valid port number
+            }
+            else if (numOfArgs >= 3) { // Fetch the actual command to be run at the server
+                cmdToRun += buf + " ";
+            }
+
+            ++numOfArgs;
         }
     }
 };
