@@ -1,24 +1,46 @@
-dans,
-Dan Shumayev (207050691),
+dans,ita_afrimi
+Dan Shumayev 207050691, Afrimi itamar 209499664
+
+FILES:
+README
+Makefile
+container.cpp -
+
+
+Remarks:
+...
+
 
 TODO - Answer theoretical questions, update partner's details, and add impl. description
 
 Theoretical part - Q&A:
 
 1. Q: Describe one general use of Linux pid namespaces.
-   A:
+   A: One general use of Linux pid namespaces is to define
+      what of the kernel resources the processes in the linux
+      container can see such as pid,user id, File system,etc.
 
 2. Q: How can Linux mount namespaces be used to help isolate a process?
-   A:
+   A: Linux mount allows to each of the processes to hace different view
+      of the system from the original one, which allows different root
+      for each isolate process.
 
-3. Q: Describe one general use of Linux cgroups.
-   A:
+3. Q: Describe one general use of Linux Cgroups.
+   A: Linux cgroups defines what container can do such:
+      what is limit of usage on CPU, max processes to manage, memory use, etc.
 
 4. Q: Explain the use of the clone command, and how it is different from the fork command
-   A:
+   A: Clone command is creating new process with specific set of attributes such
+      as namespaces. the different btween these commands is that clone
+      is upgraded command of fork beacuse its create child process and gives
+      more precise control on the data shared between process and its child.
 
 5. Q: What does the chroot command do?
-   A:
+   A: chroot command is changing the root directory path to given path, for
+      current running process as for its child's ones.
 
 6. Q: What is the purpose of procfs? Give an example of its use.
-   A:
+   A: The /proc file system is a mounted file system used to trace a process
+      system calls, to receive signals and errors.
+      An example of its uses is to obtain info about kernel and
+      to change certain kernel params at runtime.
