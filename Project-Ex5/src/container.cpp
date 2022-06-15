@@ -14,25 +14,37 @@
 #include <sys/stat.h>
 #include "utilities.h"
 
+/** Container's stack size in bytes */
 const size_t STACK_SIZE = 8192;
 
-// TODO: must create pids dir?
-const std::string CGROUP_DIR = "/sys/fs/cgroup/shumayev-cgroup";
+const std::string CGROUP_DIR = "/sys/fs/cgroup/pids";
 
-struct ChildArgs {
+struct ChildState {
     std::string new_hostname;
     std::string new_filesystem_path;
     int max_n_processes;
     std::string program_path;
     std::vector<std::string> program_args;
+
     /** A barrier that ensures the container doesn't execve before the parent (container builder)
      * has configured Cgroups, to avoid race conditions in which the container starts
      * too many processes before the parent had restricted him. */
     pthread_barrier_t *cgroup_barrier;
+
+    std::vector<const char *> toCArgs() {
+        std::vector<const char*> c_program_args = { program_path.c_str() };
+
+        for (const std::string& prog_arg: program_args) {
+            c_program_args.push_back(prog_arg.c_str());
+        }
+        c_program_args.push_back(nullptr); // Null-termination indicator
+
+        return c_program_args;
+    }
 };
 
 
-void fetchChildArgs(int argc, char const *argv[], ChildArgs &child_args) {
+void fetchChildArgs(int argc, char const *argv[], ChildState &child_args) {
     child_args = {
         argv[1],
         argv[2],
@@ -44,23 +56,13 @@ void fetchChildArgs(int argc, char const *argv[], ChildArgs &child_args) {
                                                            MAP_ANONYMOUS | MAP_SHARED, -1, 0))
     };
 
+    // Arg at index=5 is assumed to be the offset of the command to run
     for (auto program_args_idx = 5; program_args_idx < argc; ++program_args_idx) {
         child_args.program_args.emplace_back(argv[program_args_idx]);
     }
 }
 
-std::vector<const char *> toCArgs(ChildArgs &args, const char *c_program_path) {
-    std::vector<const char*> c_program_args = { c_program_path };
-
-    for (const std::string& prog_arg: args.program_args) {
-        c_program_args.push_back(prog_arg.c_str());
-    }
-    c_program_args.push_back(nullptr); // Null-termination indicator
-
-    return c_program_args;
-}
-
-void setContainerNS(const ChildArgs &args) {
+void setContainerNS(const ChildState &args) {
     if (sethostname(args.new_hostname.c_str(), args.new_hostname.size())) {
         panic("sethostname()");
     }
@@ -79,7 +81,7 @@ void setContainerNS(const ChildArgs &args) {
 }
 
 int child(void* arg) {
-    ChildArgs &args = *static_cast<ChildArgs*>(arg);
+    ChildState &args = *static_cast<ChildState*>(arg);
     setContainerNS(args);
 
     // Wait on barrier till container builder (essentially the parent) configures
@@ -93,7 +95,7 @@ int child(void* arg) {
 
     // exec* stuff:
     const char* c_program_path = args.program_path.c_str();
-    std::vector<const char *> c_program_args = toCArgs(args, c_program_path);
+    std::vector<const char *> c_program_args = args.toCArgs();
     execve(c_program_path, const_cast<char *const*>(c_program_args.data()), nullptr);
 
     // Reaching this point after executing execve indicates on a failure,
@@ -122,7 +124,7 @@ void cleanupCgroups() {
     }
 }
 
-void barrierInit(ChildArgs &child_args, pthread_barrierattr_t &attr) {
+void barrierInit(ChildState &child_args, pthread_barrierattr_t &attr) {
     auto n_procs_in_barrier = 2; // Parent process and the container (its child)
 
     if (pthread_barrierattr_init(&attr)) {
@@ -138,7 +140,7 @@ void barrierInit(ChildArgs &child_args, pthread_barrierattr_t &attr) {
     }
 }
 
-void barrierDestroy(ChildArgs &child_args, pthread_barrierattr_t &attr) {
+void barrierDestroy(ChildState &child_args, pthread_barrierattr_t &attr) {
     if (pthread_barrier_destroy(child_args.cgroup_barrier)) {
         panic("parent pthread_barrier_destroy: ");
     }
@@ -153,7 +155,7 @@ void barrierDestroy(ChildArgs &child_args, pthread_barrierattr_t &attr) {
 }
 
 int main(int argc, const char *argv[]) {
-    ChildArgs child_args;
+    ChildState child_args;
     fetchChildArgs(argc, argv, child_args);
 
     // TODO: Consider migrating barrier stuff to a RAII class
