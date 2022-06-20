@@ -4,43 +4,56 @@ Dan Shumayev 207050691, Afrimi itamar 209499664
 FILES:
 README
 Makefile
-container.cpp -
+container.cpp - Implementation of a variation of container.
+utilities.h - Miscellaneous helper functions for the socket and container.
+socket.h - Wrapper class for a socket file descriptor.
+server.h - Wrapper class for a server, listening to TCP-packets on the first
+            localhost's interface, tracking its clients' sockets.
+command.h - Wrapper class for a client/server command, to be parsed respectively,
+                such that for a server's command, it'll turn a server on, and for a client's
+                command, it'll connect him to the requested server.
+sockets.cpp - Driver of sockets part, taken place by employing the command wrapper.
 
 
 Remarks:
-...
+The code is well-documented.
 
-
-TODO - Answer theoretical questions, update partner's details, and add impl. description
 
 Theoretical part - Q&A:
 
 1. Q: Describe one general use of Linux pid namespaces.
-   A: One general use of Linux pid namespaces is to define
-      what of the kernel resources the processes in the linux
-      container can see such as pid,user id, File system,etc.
+   A: PID namespaces isolate the process ID number space,
+      meaning that processes in different PID namespaces can have the same PID.
+      Possible use of this namespace is like that of `Docker` - it provides one with the
+      ability to define a "close-space" to a collection of processes and their dependencies,
+      such that they have the illusion of a self-contained, isolated system.
+      This way, each collection can perform its job without intervening with other applications
+      and dependencies on the same original system.
 
 2. Q: How can Linux mount namespaces be used to help isolate a process?
-   A: Linux mount allows to each of the processes to hace different view
-      of the system from the original one, which allows different root
-      for each isolate process.
+   A: Linux mount allows each of the processes to have a different view
+      of the system from the original one. This can be done by mounting a new
+      root directory for the process, and mounting a new proc pseudo-filesystem for him,
+      so that it's able see only itself and its own spawned processes.
 
 3. Q: Describe one general use of Linux Cgroups.
-   A: Linux cgroups defines what container can do such:
-      what is limit of usage on CPU, max processes to manage, memory use, etc.
+   A: Linux Cgroups defines the capabilities given to a process/entire namespace:
+      Max CPU usage; Max processes spawn, Max memory usage, etc.
 
 4. Q: Explain the use of the clone command, and how it is different from the fork command
-   A: Clone command is creating new process with specific set of attributes such
-      as namespaces. the different btween these commands is that clone
-      is upgraded command of fork beacuse its create child process and gives
+   A: `clone` command creates new process with specific set of attributes such
+      as namespaces. The difference between these commands is that clone
+      is an enhancement added to `fork` because its create child process and gives
       more precise control on the data shared between process and its child.
 
 5. Q: What does the chroot command do?
-   A: chroot command is changing the root directory path to given path, for
-      current running process as for its child's ones.
+   A: `chroot` command is changing the root directory path to given path, for
+      current running process as well as for its children's ones.
 
 6. Q: What is the purpose of procfs? Give an example of its use.
-   A: The /proc file system is a mounted file system used to trace a process
-      system calls, to receive signals and errors.
-      An example of its uses is to obtain info about kernel and
-      to change certain kernel params at runtime.
+   A: The /proc pseudo-filesystem is used to trace the system's running processes.
+      For example, the kernel uses it for performing various system calls,
+      to receive signals and errors, driven by processes.
+      An example of its uses is to obtain info about the running processes, their state,
+      their total running time, their process ids, etc. It can help the kernel to make decisions
+      like scheduling.

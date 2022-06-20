@@ -20,7 +20,7 @@
 
 
 
-/** Wraps a socket file descriptor */
+/** Wrapper class for a socket file descriptor */
 class Socket
 {
     int sockFd;
@@ -29,7 +29,7 @@ class Socket
 
     static constexpr size_t MAX_HOST_NAME_LENGTH = 255;
 
-    /** Finds the address of the first network interface of the host */
+    /** Returns the address (in_addr) of the first network interface of the host */
     static in_addr getHostAddress()
     {
         char hostName[MAX_HOST_NAME_LENGTH + 1];
@@ -130,7 +130,7 @@ public:
         return stringAddr;
     }
 
-    /** Returns the underlying socket descriptor */
+    /** Returns the socket file descriptor number */
     int getFd() const { return sockFd; }
 
 
@@ -147,7 +147,7 @@ public:
 };
 
 
-/** Write 'len' bytes originating from 'data' into socket */
+/** Writes 'len' bytes from 'data' into 'sock' */
 void writeDataToSocket(Socket& sock, const char* data, size_t len)
 {
     while (len > 0)
@@ -160,7 +160,7 @@ void writeDataToSocket(Socket& sock, const char* data, size_t len)
         }
         if (res == 0)
         {
-            panic("Other side has disconnected too early");
+            panic("Other side has disconnected!");
         }
 
         len -= res;
@@ -168,8 +168,8 @@ void writeDataToSocket(Socket& sock, const char* data, size_t len)
     }
 }
 
-/** Reads 'len' bytes originating from socket into 'data' */
-void readBytesFromSocket(Socket& sock, char* data, size_t len)
+/** Reads 'len' bytes from 'sock' into 'data' */
+void readDataFromSocket(Socket& sock, char* data, size_t len)
 {
     ssize_t res;
     while (len - 1 > 0) // Save one byte for the null-terminator
@@ -182,10 +182,10 @@ void readBytesFromSocket(Socket& sock, char* data, size_t len)
         }
         if (res == 0)
         {
-            return;
+            return; // Nothing else to be read
         }
 
-        data[res] = '\0';
+        data[res] = '\0'; // Adds a null-terminator to indicate EOF
 
         len -= res;
         data += res;

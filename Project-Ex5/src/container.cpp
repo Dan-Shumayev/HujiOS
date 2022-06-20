@@ -172,7 +172,7 @@ int main(int argc, const char *argv[]) {
         panic("clone()");
     }
 
-    // Let the child spawn at most #max_n_processes processes TODO: must create inside the container?
+    // Let the child spawn at most #max_n_processes processes
     configureCgroups(child_pid, child_args.max_n_processes);
 
     // Goto barrier, indicating Cgroups are successfully configured

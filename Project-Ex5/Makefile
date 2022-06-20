@@ -9,8 +9,8 @@ TARSRCS = $(CONTAINER_SRCS) $(SOCKETS_SRCS) README Makefile
 TARNAME = ex5.tar
 TARFLAGS = -cvf
 
-CONTAINER_SRCS = src/container.cpp
-SOCKETS_SRCS = src/sockets.cpp
+CONTAINER_SRCS = src/container.cpp src/utilities.h
+SOCKETS_SRCS = src/sockets.cpp src/utilities.h src/prints.h src/server.h src/client.h src/command.h
 
 all: $(TARGETS)
 

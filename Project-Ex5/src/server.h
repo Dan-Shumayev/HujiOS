@@ -26,7 +26,7 @@ class Server
     /** Updates nfds and readfdSet since as per the `select()` docs:
      *  After select() has returned, readfds will be cleared of all file descriptors except for
      *  those that are ready for reading.*/
-    void updateSelectParameters()
+    void updateSelectParams()
     {
         nfds = std::max(serverSocket.getFd(), STDIN_FILENO) + 1;
 
@@ -43,9 +43,9 @@ class Server
     }
 
 public:
-    /** Creates server
+    /** Creates a server
      *
-     * @param port Listening socket port
+     * @param port Port upon which the server listens
      */
     explicit Server(int port)
         : serverSocket(),
@@ -65,17 +65,12 @@ public:
         {
             printf(WAIT_FOR_CLIENT_STR);
 
-            updateSelectParameters(); // Re-initialize readfdSet
+            updateSelectParams(); // Re-initialize readfdSet
 
             if (select(nfds, &readfdSet, nullptr,
                        nullptr, nullptr) == -1) // Block server till a new request arrives in
             {
-                panic("select() - ");
-            }
-
-            if (FD_ISSET(serverSocket.getFd(), &readfdSet)) // New client communication request
-            {
-                acceptClient();
+                panic("select()");
             }
 
             if (FD_ISSET(STDIN_FILENO, &readfdSet)) // User input
@@ -84,6 +79,10 @@ public:
                 std::getline(std::cin, input);
                 running = input != "quit";
             }
+            if (FD_ISSET(serverSocket.getFd(), &readfdSet)) // New client communication request
+            {
+                acceptClient();
+            }
             else // Data request from a client
             {
                 handleClients();
@@ -91,7 +90,7 @@ public:
         }
     }
 
-    /** Accepts a client (without handling it) */
+    /** Accepts a client (only open a dedicated socket with it) */
     void acceptClient()
     {
         std::unique_ptr<Socket> clientSocket = serverSocket.accept();
@@ -100,7 +99,7 @@ public:
         clientSockets.push_back(std::move(clientSocket));
     }
 
-    /** Handles all clients */
+    /** Handles all selected clients */
     void handleClients()
     {
         auto it = clientSockets.begin();
@@ -114,12 +113,12 @@ public:
                 handleClient(**it); // Fetch its command
                 it = clientSockets.erase(it);
             } else {
-                ++it;
+                ++it; // Not selected => goto the next client
             }
         }
     }
 
-    /** Handles a client
+    /** Handles a client as required
      * @param clientSocket Client socket
      */
     static void handleClient(Socket &clientSocket)
@@ -128,7 +127,7 @@ public:
 
         const size_t MAX_BUF = 256; // Max command from client of size 256B
         char cmdToRun[MAX_BUF];
-        readBytesFromSocket(clientSocket, cmdToRun, MAX_BUF); // Get data by read()
+        readDataFromSocket(clientSocket, cmdToRun, MAX_BUF); // Get data by read()
 
         system(cmdToRun); // Run the provided command
 

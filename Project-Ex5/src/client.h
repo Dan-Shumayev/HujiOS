@@ -5,7 +5,6 @@
 #include <fstream>
 #include <iterator>
 
-#include "command.h"
 #include "socket.h"
 
 
@@ -16,7 +15,7 @@ class Client
     Socket sock;
 
 public:
-    /** Construct a client sending TCP-packets to the given IP:port */
+    /** Constructs a client sending TCP-packets to the given IP:port */
     explicit Client(int port) : port(port), sock() {}
 
     /** Send a command to be run at server */
